@@ -3,7 +3,6 @@ import Link from "next/link";
 
 export default async function Home() {
   const session = await middleware();
-  console.log(session);
   if (!session) return (
     <>
     <p>Not logged in</p>
@@ -12,7 +11,7 @@ export default async function Home() {
   );
   return (
     <>
-    <p>Logged in as {session.user.email}</p>
+    <p>Logged in as {session.user?.email ?? "Unknown user"}</p>
     <Link href="/api/auth/signout">Sign out</Link>
     </>
   );
