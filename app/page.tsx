@@ -11,7 +11,7 @@ export default async function Home() {
   );
   return (
     <>
-    <p>Logged in as {session.user?.email ?? "Unknown user"}</p>
+    <p>Logged in as {session?.user?.name ?? "Unknown user"}</p>
     <Link href="/api/auth/signout">Sign out</Link>
     </>
   );
