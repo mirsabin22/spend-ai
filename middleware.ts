@@ -1,7 +1,6 @@
-import authConfig from "./auth.config"
-import NextAuth from "next-auth"
+import { auth } from "./auth"
  
 // Use only one of the two middleware options below
 // 1. Use middleware directly
-export const { auth: middleware } = NextAuth(authConfig)
+export default auth
  

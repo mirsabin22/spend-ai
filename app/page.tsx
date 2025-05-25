@@ -1,8 +1,9 @@
-import { middleware } from "@/middleware";
+import middleware from "@/middleware";
 import Link from "next/link";
 
 export default async function Home() {
   const session = await middleware();
+  console.log(session?.user?.id);
   if (!session) return (
     <>
     <p>Not logged in</p>
@@ -12,6 +13,7 @@ export default async function Home() {
   return (
     <>
     <p>Logged in as {session?.user?.name ?? "Unknown user"}</p>
+    <p>ID: {session?.user?.id}</p>
     <Link href="/api/auth/signout">Sign out</Link>
     </>
   );
