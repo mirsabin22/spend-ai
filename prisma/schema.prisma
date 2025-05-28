@@ -6,7 +6,12 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+// Extend here
+// here
  
+
+// From this to bottom should not be changed
 model User {
   id            String          @id @default(cuid())
   name          String?

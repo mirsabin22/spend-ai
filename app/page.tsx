@@ -1,8 +1,8 @@
-import middleware from "@/middleware";
+import auth from "@/middleware";
 import Link from "next/link";
 
 export default async function Home() {
-  const session = await middleware();
+  const session = await auth();
   console.log(session?.user?.id);
   if (!session) return (
     <>
