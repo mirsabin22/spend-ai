@@ -1,0 +1,1 @@
+export const DEFAULT_SYSTEM = `Based on the given text, extract the expense object with the following fields\n`
