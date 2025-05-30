@@ -1,10 +1,7 @@
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "./prisma"
 import { Redis } from "@upstash/redis"
 import { getTodayKey } from "./utils"
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
-export const prisma = globalForPrisma.prisma || new PrismaClient()
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+import { Prisma } from "@prisma/client";
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -33,4 +30,12 @@ export async function getConversionRateFromUSD(toCurrency: string) {
 
 export async function getUser(userId: string) {
     return await prisma.user.findUnique({ where: { id: userId } })
+}
+
+export async function getTransactions(userId: string) {
+    return await prisma.transaction.findMany({ where: { userId } })
+}
+
+export async function createTransaction(transaction: Prisma.TransactionCreateInput) {
+    return await prisma.transaction.create({ data: transaction })
 }
