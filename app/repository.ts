@@ -32,10 +32,60 @@ export async function getUser(userId: string) {
     return await prisma.user.findUnique({ where: { id: userId } })
 }
 
-export async function getTransactions(userId: string) {
-    return await prisma.transaction.findMany({ where: { userId } })
+export async function getTransactions(
+  userId: string,
+  filter?: {
+    category?: string;
+    currency?: string;
+    search?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }
+) {
+  return await prisma.transaction.findMany({
+    where: {
+      userId,
+      ...(filter?.category && { category: filter.category }),
+      ...(filter?.currency && { currency: filter.currency }),
+      ...(filter?.search && {
+        OR: [
+          { name: { contains: filter.search } },
+          { description: { contains: filter.search } },
+        ]
+      }),
+      ...(filter?.startDate && {
+        createdAt: { gte: filter.startDate }
+      }),
+      ...(filter?.endDate && {
+        createdAt: {
+          ...(filter?.startDate ? { gte: filter.startDate } : {}),
+          lte: filter.endDate
+        }
+      }),
+    },
+  })
 }
 
 export async function createTransaction(transaction: Prisma.TransactionCreateInput) {
     return await prisma.transaction.create({ data: transaction })
+}
+
+export async function isTransactionOwnedByUser(transactionId: string, userId: string): Promise<boolean> {
+    const tx = await prisma.transaction.findUnique({
+        where: { id: transactionId },
+        select: { userId: true }
+    })
+
+    return tx?.userId === userId
+}
+
+export async function deleteTransaction(userId: string, transactionId: string) {
+    const owned = await isTransactionOwnedByUser(transactionId, userId)
+    if (!owned) {
+        throw new Error("Unauthorized or transaction not found")
+    }
+
+    return await prisma.transaction.delete({
+        where: { id: transactionId }
+    })
 }

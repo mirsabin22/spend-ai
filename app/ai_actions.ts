@@ -7,10 +7,21 @@ import { DEFAULT_SYSTEM } from "./constants";
 
 const model = new ChatOpenAI({ model: "gpt-4o-mini" });
 
+const categories = [
+    "Food",
+    "Transportation",
+    "Shopping",
+    "Health and Fitness",
+    "Entertainment",
+    "Education",
+    "Utilities",
+    "Other",
+]
+
 const expense_schema = z.object({
     name: z.string().describe("Name of the expense"),
     description: z.string().describe("If more information is available, describe it here"),
-    category: z.string().describe("Category of the expense"),
+    category: z.string().describe("Category of the expense, must be one of: " + categories.join(", ")),
     amount: z.number().describe("Amount of the expense"),
     currency: z.string().describe("Currency of the expense, like 'IDR', 'USD', etc."),
 });
