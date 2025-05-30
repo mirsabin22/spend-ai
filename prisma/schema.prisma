@@ -9,6 +9,19 @@ generator client {
 
 // Extend here
 // here
+
+model Transaction {
+  id        String   @id @default(cuid())
+  name      String
+  description String?
+  amount    Float
+  currency  String
+  category  String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
  
 
 // From this to bottom should not be changed
@@ -22,7 +35,7 @@ model User {
   sessions      Session[]
   // Optional for WebAuthn support
   Authenticator Authenticator[]
- 
+  transactions  Transaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
