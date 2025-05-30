@@ -17,6 +17,8 @@ services:
       - 3000:3000
     env_file:
       - .env
+    volumes:
+      - ./prisma:/usr/src/app/prisma
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
