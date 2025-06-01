@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trash } from "lucide-react"
-
-import DirectInput from "./DirectInput"
+import DirectInput from "./direct-input"
 import {
     createTransactionFromTextAction,
     getTransactionsAction,
