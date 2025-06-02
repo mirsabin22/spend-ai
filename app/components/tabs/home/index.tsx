@@ -5,36 +5,53 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Trash } from "lucide-react"
 import DirectInput from "./direct-input"
 import CategoryBadge from "./category-badges"
+import ExpenseModal from "./expense-modal"
 import {
     createTransactionFromTextAction,
     getTransactionsAction,
     deleteTransactionAction,
+    updateTransactionAction,
 } from "@/app/actions"
+
+type Expense = {
+    id: string
+    name: string
+    description: string
+    category: string
+    amount: number
+    currency: string
+    createdAt: string
+}
 
 export default function HomeTab() {
     const [text, setText] = useState("")
-    const [transactions, setTransactions] = useState<any[]>([])
+    const [transactions, setTransactions] = useState<Expense[]>([])
+    const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
 
     useEffect(() => {
-        const fetchData = async () => {
-            const result = await getTransactionsAction()
-            setTransactions(result)
-        }
         fetchData()
     }, [])
+
+    const fetchData = async () => {
+        const result = await getTransactionsAction()
+        setTransactions(result)
+    }
 
     const onSubmit = async () => {
         if (!text.trim()) return
         await createTransactionFromTextAction(text)
         setText("")
-        const updated = await getTransactionsAction()
-        setTransactions(updated)
+        await fetchData()
     }
 
     const onDelete = async (id: string) => {
         await deleteTransactionAction(id)
-        const updated = await getTransactionsAction()
-        setTransactions(updated)
+        await fetchData()
+    }
+
+    const onSave = async (updated: Expense) => {
+        await updateTransactionAction(updated)
+        await fetchData()
     }
 
     const formatDateTime = (iso: string) => {
@@ -85,7 +102,11 @@ export default function HomeTab() {
                 {transactions
                     .filter(tx => isToday(tx.createdAt))
                     .map((tx) => (
-                        <Card key={tx.id}>
+                        <Card
+                            key={tx.id}
+                            onClick={() => setSelectedExpense(tx)}
+                            className="cursor-pointer hover:shadow-md transition"
+                        >
                             <CardContent className="px-4 py-3">
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -93,7 +114,13 @@ export default function HomeTab() {
                                         <div className="text-sm text-muted-foreground">{tx.description}</div>
                                         <div className="text-xs text-muted-foreground">{formatDateTime(tx.createdAt)}</div>
                                     </div>
-                                    <button onClick={() => onDelete(tx.id)} className="text-red-500 hover:text-red-700">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onDelete(tx.id)
+                                        }}
+                                        className="text-red-500 hover:text-red-700"
+                                    >
                                         <Trash className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -107,6 +134,15 @@ export default function HomeTab() {
                         </Card>
                     ))}
             </div>
+
+            {selectedExpense && (
+                <ExpenseModal
+                    expense={selectedExpense}
+                    onClose={() => setSelectedExpense(null)}
+                    onSave={onSave}
+                    onDelete={onDelete}
+                />
+            )}
         </div>
     )
 }

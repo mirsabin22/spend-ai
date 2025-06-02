@@ -1,12 +1,13 @@
 "use server"
 
-import { 
+import {
     getConversionRateFromUSD,
     getUser,
     createTransaction,
     getTransactions,
     deleteTransaction,
- } from "./repository"
+    updateTransaction
+} from "./repository"
 import { textToExpense } from "./ai_actions"
 import { auth } from "@/auth"
 
@@ -68,4 +69,16 @@ export async function getTransactionsAction() {
 export async function deleteTransactionAction(id: string) {
     const userId = await requireAuth()
     return await deleteTransaction(userId, id)
+}
+
+export async function updateTransactionAction(data: {
+    id: string,
+    name: string,
+    description: string,
+    category: string,
+    amount: number,
+    currency: string,
+}) {
+    const userId = await requireAuth()
+    return await updateTransaction(userId, data)
 }

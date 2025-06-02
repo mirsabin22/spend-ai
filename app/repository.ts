@@ -9,27 +9,27 @@ const redis = new Redis({
 });
 
 export async function getConversionRateFromUSD(toCurrency: string) {
-    const key = getTodayKey();
-    let data = await redis.get<{ rates: Record<string, number> }>(key);
-  
-    if (!data) {
-        console.log("Fetching exchange rate from API")
-        const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        data = await response.json();
-        await redis.set(key, data, { ex: 86400 }); // TTL 1 day
-    }
+  const key = getTodayKey();
+  let data = await redis.get<{ rates: Record<string, number> }>(key);
 
-    const rate = data?.rates?.[toCurrency];
+  if (!data) {
+    console.log("Fetching exchange rate from API")
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    data = await response.json();
+    await redis.set(key, data, { ex: 86400 }); // TTL 1 day
+  }
 
-    if (typeof rate !== 'number') {
-        throw new Error(`Conversion rate for ${toCurrency} not found`);
-    }
-  
-    return rate;
+  const rate = data?.rates?.[toCurrency];
+
+  if (typeof rate !== 'number') {
+    throw new Error(`Conversion rate for ${toCurrency} not found`);
+  }
+
+  return rate;
 }
 
 export async function getUser(userId: string) {
-    return await prisma.user.findUnique({ where: { id: userId } })
+  return await prisma.user.findUnique({ where: { id: userId } })
 }
 
 export async function getTransactions(
@@ -67,25 +67,48 @@ export async function getTransactions(
 }
 
 export async function createTransaction(transaction: Prisma.TransactionCreateInput) {
-    return await prisma.transaction.create({ data: transaction })
+  return await prisma.transaction.create({ data: transaction })
 }
 
 export async function isTransactionOwnedByUser(transactionId: string, userId: string): Promise<boolean> {
-    const tx = await prisma.transaction.findUnique({
-        where: { id: transactionId },
-        select: { userId: true }
-    })
+  const tx = await prisma.transaction.findUnique({
+    where: { id: transactionId },
+    select: { userId: true }
+  })
 
-    return tx?.userId === userId
+  return tx?.userId === userId
 }
 
 export async function deleteTransaction(userId: string, transactionId: string) {
-    const owned = await isTransactionOwnedByUser(transactionId, userId)
-    if (!owned) {
-        throw new Error("Unauthorized or transaction not found")
-    }
+  const owned = await isTransactionOwnedByUser(transactionId, userId)
+  if (!owned) {
+    throw new Error("Unauthorized or transaction not found")
+  }
 
-    return await prisma.transaction.delete({
-        where: { id: transactionId }
-    })
+  return await prisma.transaction.delete({
+    where: { id: transactionId }
+  })
+}
+
+export async function updateTransaction(userId: string, data: {
+  id: string,
+  name: string,
+  description: string,
+  category: string,
+  amount: number,
+  currency: string,
+}) {
+  return await prisma.transaction.update({
+    where: {
+      id: data.id,
+      userId: userId,
+    },
+    data: {
+      name: data.name,
+      description: data.description,
+      category: data.category,
+      amount: data.amount,
+      currency: data.currency,
+    },
+  })
 }
