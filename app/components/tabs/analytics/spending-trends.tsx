@@ -30,7 +30,7 @@ export function SpendingTrends() {
 
     useEffect(() => {
         const fetchComparisonData = async () => {
-            const trends = await getCategorySpendingComparisonAction(historyCount, userCurrency, period)
+            const trends = await getCategorySpendingComparisonAction(period, historyCount)
             setComparisonData(trends.map(t => ({
                 category: t.category,
                 current: Math.round(t.current),
@@ -40,12 +40,12 @@ export function SpendingTrends() {
             })))
         }
         fetchComparisonData()
-    }, [period])
+    }, [period, historyCount])
 
 
     useEffect(() => {
         const fetchSpendingData = async () => {
-            const trends = await getSpendingTrendsAction(period, userCurrency)
+            const trends = await getSpendingTrendsAction(period, historyCount)
             setSpendingData(trends.map(t => {
                 let formattedPeriod = ""
                 if (period === "daily") {
@@ -64,19 +64,20 @@ export function SpendingTrends() {
             }))
         }
         fetchSpendingData()
-    }, [period, userCurrency])
+    }, [period, historyCount])
 
     useEffect(() => {
         const fetchInsights = async () => {
             const insights = await getInsights({
                 input: "Period: " + period + "\n" +
+                    "History count: " + historyCount + "\n" +
                     "Spending data: " + JSON.stringify(spendingData) + "\n" +
                     "Comparison data: " + JSON.stringify(comparisonData)
             })
             setInsights(insights)
         }
         fetchInsights()
-    }, [period])
+    }, [period, historyCount])
 
     return (
         <div className="space-y-4">

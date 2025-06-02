@@ -35,10 +35,10 @@ export function CategoryAnalysis() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getCategoryBreakdownAction(undefined, undefined, userCurrency)
+      const data = await getCategoryBreakdownAction()
       setCategoryData(data)
 
-      const topExpenses = await getTopExpensesAction({ currency: userCurrency })
+      const topExpenses = await getTopExpensesAction()
       setTopExpenses(topExpenses.map((expense) => ({
         name: expense.name,
         amount: expense.amount,

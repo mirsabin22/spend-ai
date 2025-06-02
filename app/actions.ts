@@ -102,19 +102,22 @@ export async function updateTransactionAction(data: {
     return await updateTransaction(userId, data)
 }
 
-export async function getCategoryBreakdownAction(startDate?: Date, endDate?: Date, targetCurrency: string = "USD") {
+export async function getCategoryBreakdownAction(startDate?: Date, endDate?: Date) {
     const userId = await requireAuth()
-    return await getCategoryBreakdown(userId, targetCurrency, startDate, endDate)
+    const user = await getUser(userId)
+    return await getCategoryBreakdown(userId, user?.currency, startDate, endDate)
 }
 
-export async function getSpendingTrendsAction(period: "daily" | "weekly" | "monthly" = "daily", targetCurrency: string = "USD", historyCount: number = 7) {
+export async function getSpendingTrendsAction(period: "daily" | "weekly" | "monthly" = "daily", historyCount: number = 7) {
     const userId = await requireAuth()
-    return await getSpendingTrends(userId, period, targetCurrency, historyCount)
+    const user = await getUser(userId)
+    return await getSpendingTrends(userId, period, user?.currency, historyCount)
 }
 
-export async function getCategorySpendingComparisonAction(historyCount: number = 3, targetCurrency: string = "USD", period: "daily" | "weekly" | "monthly" = "daily") {
+export async function getCategorySpendingComparisonAction(period: "daily" | "weekly" | "monthly" = "daily", historyCount: number = 3) {
     const userId = await requireAuth()
-    return await getCategorySpendingComparison(userId, targetCurrency, historyCount, period)
+    const user = await getUser(userId)
+    return await getCategorySpendingComparison(userId, user?.currency, historyCount, period)
 }
 
 export async function getTopExpensesAction(filter?: {
@@ -125,7 +128,8 @@ export async function getTopExpensesAction(filter?: {
     currency?: string;
 }) {
     const userId = await requireAuth()
-    return await getTopExpenses(userId, filter)
+    const user = await getUser(userId)
+    return await getTopExpenses(userId, { ...filter, currency: user?.currency })
 }
 
 
