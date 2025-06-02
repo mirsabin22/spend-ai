@@ -6,6 +6,10 @@ import {
     createTransaction,
     getTransactions,
     deleteTransaction,
+    getCategoryBreakdown,
+    getSpendingTrends,
+    getCategorySpendingComparison,
+    getTopExpenses,
  } from "./repository"
 import { textToExpense } from "./ai_actions"
 import { auth } from "@/auth"
@@ -60,12 +64,45 @@ export async function createTransactionAction(data: {
     })
 }
 
-export async function getTransactionsAction() {
+export async function getTransactionsAction(filter?: {
+    category?: string;
+    currency?: string;
+    search?: string;
+    startDate?: Date;
+    endDate?: Date;
+}) {
     const userId = await requireAuth()
-    return await getTransactions(userId)
+    return await getTransactions(userId, filter)
 }
 
 export async function deleteTransactionAction(id: string) {
     const userId = await requireAuth()
     return await deleteTransaction(userId, id)
 }
+
+export async function getCategoryBreakdownAction(startDate?: Date, endDate?: Date, targetCurrency: string = "USD") {
+    const userId = await requireAuth()
+    return await getCategoryBreakdown(userId, targetCurrency, startDate, endDate)
+}
+
+export async function getSpendingTrendsAction(period: "daily" | "weekly" | "monthly" = "daily", targetCurrency: string = "USD", historyCount: number = 7) {
+    const userId = await requireAuth()
+    return await getSpendingTrends(userId, period, targetCurrency, historyCount)
+}
+
+export async function getCategorySpendingComparisonAction(historyCount: number = 3, targetCurrency: string = "USD", period: "daily" | "weekly" | "monthly" = "daily") {
+    const userId = await requireAuth()
+    return await getCategorySpendingComparison(userId, targetCurrency, historyCount, period)
+}
+
+export async function getTopExpensesAction(filter?: {
+    limit?: number;
+    category?: string;
+    startDate?: Date;
+    endDate?: Date;
+    currency?: string;
+}) {
+    const userId = await requireAuth()
+    return await getTopExpenses(userId, filter)
+}
+
