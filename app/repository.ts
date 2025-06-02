@@ -8,8 +8,12 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+export type UpdateUserInput = {
+  currency?: string;
+}
+
 // Utility function to fetch and cache exchange rates
-async function getCachedExchangeRates(): Promise<Record<string, number>> {
+export async function getCachedExchangeRates(): Promise<Record<string, number>> {
   const key = getTodayKey();
   let data = await redis.get<{ rates: Record<string, number> }>(key);
 
@@ -45,6 +49,13 @@ export async function getConversionRateFromUSD(toCurrency: string) {
 
 export async function getUser(userId: string) {
   return await prisma.user.findUnique({ where: { id: userId } })
+}
+
+export async function updateUser(userId: string, data: UpdateUserInput) {
+  return await prisma.user.update({
+    where: { id: userId },
+    data,
+  })
 }
 
 export async function getTransactions(

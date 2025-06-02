@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpIcon, ArrowDownIcon, AlertTriangle, Dot } from "lucide-react"
 import { useEffect, useState } from "react"
-import { getSpendingTrendsAction, getCategorySpendingComparisonAction } from "@/app/actions"
+import { getSpendingTrendsAction, getCategorySpendingComparisonAction, getUserAction } from "@/app/actions"
 import { getInsights } from "@/app/ai_actions"
-import { format } from "date-fns"
+import { format, getISOWeek } from "date-fns"
 import { CATEGORY_ICONS } from "@/app/constants"
 
 export function SpendingTrends() {
@@ -14,12 +14,19 @@ export function SpendingTrends() {
     const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily")
     const [comparisonData, setComparisonData] = useState<{ category: string, current: number, average: number, status: "over" | "under", percentage: number }[]>([])
     const [historyCount, setHistoryCount] = useState<number>(3)
-    const [userCurrency, setUserCurrency] = useState<string>("USD")
+    const [userCurrency, setUserCurrency] = useState<string>()
     const [insights, setInsights] = useState<string[]>([])
-    const [initialized, setInitialized] = useState<boolean>(false)
 
     // Find the max value for scaling the chart
     const maxSpendingAmount = Math.max(...spendingData.map((d) => d.total))
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const user = await getUserAction()
+            setUserCurrency(user?.currency)
+        }
+        fetchUser()
+    }, [])
 
     useEffect(() => {
         const fetchComparisonData = async () => {
@@ -39,33 +46,77 @@ export function SpendingTrends() {
     useEffect(() => {
         const fetchSpendingData = async () => {
             const trends = await getSpendingTrendsAction(period, userCurrency)
-            setSpendingData(trends.map(t => ({
-                period: format(t.period, "dd/MM"), // day format
-                total: Math.round(t.total)
-            })))
+            setSpendingData(trends.map(t => {
+                let formattedPeriod = ""
+                if (period === "daily") {
+                    formattedPeriod = format(t.period, "dd/MM")
+                } else if (period === "weekly") {
+                    const weekNumber = getISOWeek(t.period)
+                    const year = t.period.split("-")[0]
+                    formattedPeriod = `W${weekNumber} ${year}`
+                } else {
+                    formattedPeriod = format(t.period, "MMM yyyy")
+                }
+                return {
+                    period: formattedPeriod,
+                    total: Math.round(t.total),
+                }
+            }))
         }
         fetchSpendingData()
-    }, [period])
+    }, [period, userCurrency])
 
     useEffect(() => {
         const fetchInsights = async () => {
-            const insights = await getInsights({ 
-                input: "Period: " + period + "\n" + 
-                "Spending data: " + JSON.stringify(spendingData) + "\n" +
-                "Comparison data: " + JSON.stringify(comparisonData) })
+            const insights = await getInsights({
+                input: "Period: " + period + "\n" +
+                    "Spending data: " + JSON.stringify(spendingData) + "\n" +
+                    "Comparison data: " + JSON.stringify(comparisonData)
+            })
             setInsights(insights)
         }
-        if (!initialized) {
-            fetchInsights()
-            setInitialized(true)
-        }
+        fetchInsights()
     }, [period])
 
     return (
         <div className="space-y-4">
+            <div className="flex items-center gap-4 mb-2">
+                <div className="space-y-1">
+                    <label htmlFor="period" className="block text-sm font-medium text-muted-foreground">Show data by</label>
+                    <select
+                        id="period"
+                        className="rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value as typeof period)}
+                    >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+                <div className="space-y-1 ml-auto">
+                    <label htmlFor="historyCount" className="block text-sm font-medium text-muted-foreground">
+                        Average over how many periods?
+                    </label>
+                    <select
+                        id="historyCount"
+                        className="rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm "
+                        value={historyCount}
+                        onChange={(e) => setHistoryCount(Number(e.target.value))}
+                    >
+                        {[1, 3, 6, 12].map((n) => (
+                            <option key={n} value={n}>
+                                {n} {period === "monthly" ? "months" : period === "weekly" ? "weeks" : "days"}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
             <Card className="border-none shadow-sm">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Daily Spending</CardTitle>
+                    <CardTitle className="text-base">
+                        {period === "daily" ? "Daily Spending" : period === "weekly" ? "Weekly Spending" : "Monthly Spending"}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex h-[150px] items-end justify-between">
@@ -78,7 +129,7 @@ export function SpendingTrends() {
                                     }}
                                 />
                                 <span className="mt-2 text-xs">{day.period}</span>
-                                <span className="text-xs text-muted-foreground">¥{day.total}</span>
+                                <span className="text-xs text-muted-foreground">{day.total} {userCurrency}</span>
                             </div>
                         ))}
                     </div>

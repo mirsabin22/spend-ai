@@ -14,10 +14,11 @@ import TransactionsTab from "@/app/components/tabs/transactions"
 import SettingsTab from "@/app/components/tabs/settings"
 
 import auth from "@/middleware"
+import { getUserAction } from "../actions"
 
 export default async function My() {
   const session = await auth()
-
+  
   if (!session?.user?.id) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-4">
@@ -25,13 +26,15 @@ export default async function My() {
         <Link
           href="/api/auth/signin"
           className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-        >
+          >
           Sign in
         </Link>
       </div>
     )
   }
-
+  
+  const userSettings = await getUserAction()
+  
   return (
     <Tabs defaultValue="home" className="flex flex-col min-h-screen w-full">
       {/* Main content */}
@@ -40,7 +43,7 @@ export default async function My() {
           <HomeTab />
         </TabsContent>
         <TabsContent value="analytics">
-          <AnalyticsTab />
+          <AnalyticsTab/>
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab />

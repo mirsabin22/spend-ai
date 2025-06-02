@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { getCategoryBreakdownAction, getTopExpensesAction } from "@/app/actions"
+import { getCategoryBreakdownAction, getTopExpensesAction, getUserAction } from "@/app/actions"
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
 
 export function CategoryAnalysis() {
-    const [userCurrency, setUserCurrency] = useState<string>("ZWL")
+  const [userCurrency, setUserCurrency] = useState<string>()
 
   const [categoryData, setCategoryData] = useState<{
     category: string;
@@ -24,6 +24,14 @@ export function CategoryAnalysis() {
     category: string;
     createdAt: string;
   }[]>([])
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getUserAction()
+      setUserCurrency(user?.currency)
+    }
+    fetchUser()
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {

@@ -6,6 +6,7 @@ import { SpendingTrends } from "./spending-trends"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function AnalyticsTab() {
+  
   const [mounted, setMounted] = useState(false)
 
   // This ensures hydration mismatch is avoided

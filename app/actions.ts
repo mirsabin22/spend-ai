@@ -3,6 +3,7 @@
 import {
     getConversionRateFromUSD,
     getUser,
+    updateUser,
     createTransaction,
     getTransactions,
     deleteTransaction,
@@ -11,6 +12,8 @@ import {
     getSpendingTrends,
     getCategorySpendingComparison,
     getTopExpenses,
+    UpdateUserInput,
+    getCachedExchangeRates
  } from "./repository"
 import { textToExpense } from "./ai_actions"
 import { auth } from "@/auth"
@@ -26,8 +29,14 @@ export async function convertCurrencyAction(fromCurrency: string, toCurrency: st
     return amount * rate / fromRate
 }
 
-export async function getUserAction(userId: string) {
+export async function getUserAction() {
+    const userId = await requireAuth()
     return await getUser(userId)
+}
+
+export async function updateUserAction(data: UpdateUserInput) {
+    const userId = await requireAuth()
+    return await updateUser(userId, data)
 }
 
 export async function requireAuth() {
@@ -120,3 +129,7 @@ export async function getTopExpensesAction(filter?: {
 }
 
 
+export async function getAvailableCurrenciesAction() {
+    return Object.keys(await getCachedExchangeRates())
+}
+    

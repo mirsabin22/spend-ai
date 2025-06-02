@@ -33,6 +33,7 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  currency      String @default("USD")
   // Optional for WebAuthn support
   Authenticator Authenticator[]
   transactions  Transaction[]

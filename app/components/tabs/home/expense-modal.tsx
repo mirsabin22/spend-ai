@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Edit, Check, Trash } from "lucide-react"
+import { X, Edit, Trash } from "lucide-react"
+import { CATEGORIES } from "@/app/constants"
+import { getAvailableCurrenciesAction } from "@/app/actions"
 
 type Expense = {
     id: string
@@ -23,11 +25,20 @@ type Props = {
 export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Props) {
     const [isEdit, setIsEdit] = useState(false)
     const [formData, setFormData] = useState<Expense | null>(expense)
+    const [currencies, setCurrencies] = useState<string[]>([])
 
     useEffect(() => {
         setFormData(expense)
         setIsEdit(false)
     }, [expense])
+
+    useEffect(() => {
+        const fetchRates = async () => {
+            const rates = await getAvailableCurrenciesAction()
+            setCurrencies(rates)
+        }
+        fetchRates()
+    }, [])
 
     if (!expense) return null
 
@@ -108,15 +119,11 @@ export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Pro
                             onChange={handleChange}
                             className="w-full mb-2 px-3 py-1 border rounded"
                         >
-                            <option value="">Select category</option>
-                            <option value="Food">Food</option>
-                            <option value="Transportation">Transportation</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Health and Fitness">Health and Fitness</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Education">Education</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Other">Other</option>
+                            {CATEGORIES.map((category) => (
+                                <option key={category} value={category}>
+                                    {category}
+                                </option>
+                            ))}
                         </select>
                         <input
                             type="number"
@@ -126,14 +133,18 @@ export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Pro
                             placeholder="Amount"
                             className="w-full mb-2 px-3 py-1 border rounded"
                         />
-                        <input
-                            type="text"
+                        <select
                             name="currency"
                             value={formData?.currency || ""}
                             onChange={handleChange}
-                            placeholder="Currency"
                             className="w-full mb-4 px-3 py-1 border rounded"
-                        />
+                        >
+                            {currencies.map((currency) => (
+                                <option key={currency} value={currency}>
+                                    {currency}
+                                </option>
+                            ))}
+                        </select>
                         <div className="flex justify-end space-x-3">
                             <button
                                 onClick={() => setIsEdit(false)}
