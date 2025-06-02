@@ -12,6 +12,8 @@ type Props = {
 }
 
 export default function DirectInput({ inputText, setInputText, onSubmit }: Props) {
+    const isDisabled = !inputText.trim()
+
     return (
         <Card className="border-none p-3 shadow-sm">
             <div className="flex items-center gap-2">
@@ -21,16 +23,23 @@ export default function DirectInput({ inputText, setInputText, onSubmit }: Props
                     onChange={(e) => setInputText(e.target.value)}
                     className="flex-1"
                 />
-                <Button type="button" size="icon" variant="outline" className="h-10 w-10 shrink-0" aria-label="Voice input">
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="h-10 w-10 shrink-0"
+                    aria-label="Voice input"
+                >
                     <Mic className="h-5 w-5" />
                 </Button>
                 <Button
                     type="button"
                     size="icon"
                     className="h-10 w-10 shrink-0"
-                    disabled={!inputText}
+                    disabled={isDisabled}
                     onClick={onSubmit}
                     aria-label="Send"
+                    style={{ cursor: isDisabled ? "not-allowed" : "pointer" }}
                 >
                     <Send className="h-5 w-5" />
                 </Button>

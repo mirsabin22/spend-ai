@@ -1,11 +1,12 @@
 "use server"
 
-import { 
+import {
     getConversionRateFromUSD,
     getUser,
     createTransaction,
     getTransactions,
     deleteTransaction,
+    updateTransaction,
     getCategoryBreakdown,
     getSpendingTrends,
     getCategorySpendingComparison,
@@ -80,6 +81,18 @@ export async function deleteTransactionAction(id: string) {
     return await deleteTransaction(userId, id)
 }
 
+export async function updateTransactionAction(data: {
+    id: string,
+    name: string,
+    description: string,
+    category: string,
+    amount: number,
+    currency: string,
+}) {
+    const userId = await requireAuth()
+    return await updateTransaction(userId, data)
+}
+
 export async function getCategoryBreakdownAction(startDate?: Date, endDate?: Date, targetCurrency: string = "USD") {
     const userId = await requireAuth()
     return await getCategoryBreakdown(userId, targetCurrency, startDate, endDate)
@@ -105,4 +118,5 @@ export async function getTopExpensesAction(filter?: {
     const userId = await requireAuth()
     return await getTopExpenses(userId, filter)
 }
+
 
