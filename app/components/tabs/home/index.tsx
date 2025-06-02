@@ -38,7 +38,11 @@ export default function HomeTab() {
     const fetchData = async () => {
         setLoading(true)              // Start loading
         const result = await getTransactionsAction()
-        setTransactions(result)
+        setTransactions(result.map(tx => ({
+            ...tx,
+            description: tx.description || "",
+            createdAt: tx.createdAt.toISOString(),
+        })))
         setLoading(false)             // End loading
     }
 
