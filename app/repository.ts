@@ -60,15 +60,16 @@ export async function updateUser(userId: string, data: UpdateUserInput) {
 
 export async function getTransactions(
   userId: string,
+  targetCurrency: string = "USD",
   filter?: {
     category?: string;
     currency?: string;
     search?: string;
     startDate?: Date;
     endDate?: Date;
-  }
+  },
 ) {
-  return await prisma.transaction.findMany({
+  const transactions = await prisma.transaction.findMany({
     where: {
       userId,
       ...(filter?.category && { category: filter.category }),
@@ -89,7 +90,25 @@ export async function getTransactions(
         }
       }),
     },
-  })
+  });
+
+  const rates = await getCachedExchangeRates();
+  const targetRate = rates[targetCurrency];
+  if (!targetRate || targetRate === 0) {
+    throw new Error(`Rate for target currency ${targetCurrency} not found`);
+  }
+  return transactions.map((tx) => {
+    const fromRate = rates[tx.currency] ?? 1;
+    const convertedAmount = tx.currency === targetCurrency
+      ? tx.amount
+      : tx.amount * targetRate / fromRate;
+      
+    return {
+      ...tx,
+      convertedAmount,
+      convertedCurrency: targetCurrency,
+    };
+  });
 }
 
 export async function createTransaction(transaction: Prisma.TransactionCreateInput) {
@@ -151,11 +170,11 @@ export async function getCategoryBreakdown(
       userId,
       ...(startDate || endDate
         ? {
-            createdAt: {
-              ...(startDate && { gte: startDate }),
-              ...(endDate && { lte: endDate }),
-            },
-          }
+          createdAt: {
+            ...(startDate && { gte: startDate }),
+            ...(endDate && { lte: endDate }),
+          },
+        }
         : {}),
     },
     select: {
@@ -165,14 +184,20 @@ export async function getCategoryBreakdown(
     },
   });
 
+  const rates = await getCachedExchangeRates();
+  const targetRate = rates[targetCurrency];
+  if (!targetRate || targetRate === 0) {
+    throw new Error(`Rate for target currency ${targetCurrency} not found`);
+  }
+
   const totalsByCategory: Record<string, number> = {};
 
   for (const tx of transactions) {
-    const rate = tx.currency === targetCurrency
-      ? 1
-      : await getConversionRateFromUSD(tx.currency).then(r => 1 / r);
+    const fromRate = rates[tx.currency] ?? 1;
+    const convertedAmount = tx.currency === targetCurrency
+      ? tx.amount
+      : tx.amount * targetRate / fromRate;
 
-    const convertedAmount = tx.amount * rate;
     totalsByCategory[tx.category] = (totalsByCategory[tx.category] || 0) + convertedAmount;
   }
 
@@ -221,13 +246,19 @@ export async function getSpendingTrends(
     },
   });
 
+  const rates = await getCachedExchangeRates();
+  const targetRate = rates[targetCurrency];
+  if (!targetRate || targetRate === 0) {
+    throw new Error(`Rate for target currency ${targetCurrency} not found`);
+  }
+
   const totalsByPeriod: Record<string, number> = {};
 
   for (const tx of transactions) {
-    const rate = tx.currency === targetCurrency
-      ? 1
-      : await getConversionRateFromUSD(tx.currency).then(r => 1 / r);
-    const convertedAmount = tx.amount * rate;
+    const fromRate = rates[tx.currency] ?? 1;
+    const convertedAmount = tx.currency === targetCurrency
+      ? tx.amount
+      : tx.amount * targetRate / fromRate;
 
     let key: string;
     const date = new Date(tx.createdAt);
@@ -315,11 +346,11 @@ export async function getTopExpenses(
       ...(filter?.category && { category: filter.category }),
       ...(filter?.startDate || filter?.endDate
         ? {
-            createdAt: {
-              ...(filter?.startDate && { gte: filter.startDate }),
-              ...(filter?.endDate && { lte: filter.endDate }),
-            },
-          }
+          createdAt: {
+            ...(filter?.startDate && { gte: filter.startDate }),
+            ...(filter?.endDate && { lte: filter.endDate }),
+          },
+        }
         : {}),
     },
     select: {
@@ -334,10 +365,8 @@ export async function getTopExpenses(
 
   const targetCurrency = filter?.currency ?? "USD";
 
-  // Ambil semua currency unik dari transaksi
   const currencies = [...new Set(transactions.map(tx => tx.currency))];
 
-  // Ambil conversion rates sekali untuk semua currency yang dibutuhkan
   const baseRates = await getCachedExchangeRates();
 
   for (const currency of currencies) {
@@ -365,9 +394,7 @@ export async function getTopExpenses(
     };
   });
 
-  // Urutkan setelah dikonversi
   const sorted = converted.sort((a, b) => b.convertedAmount - a.convertedAmount);
 
   return sorted.slice(0, filter?.limit ?? 5);
 }
-

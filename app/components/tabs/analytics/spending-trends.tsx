@@ -1,5 +1,7 @@
 "use client"
 
+import { getBestLocale } from "@/app/utils"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpIcon, ArrowDownIcon, AlertTriangle, Dot } from "lucide-react"
@@ -130,7 +132,14 @@ export function SpendingTrends() {
                                     }}
                                 />
                                 <span className="mt-2 text-xs">{day.period}</span>
-                                <span className="text-xs text-muted-foreground">{day.total} {userCurrency}</span>
+                                <span className="text-xs text-muted-foreground">
+                                    {day.total.toLocaleString(getBestLocale(), {
+                                        style: "currency",
+                                        currency: userCurrency,
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                    })}
+                                </span>
                             </div>
                         ))}
                     </div>
@@ -181,8 +190,18 @@ export function SpendingTrends() {
                                                 />
                                             </div>
                                             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                                                <span>Current: {item.current.toLocaleString()} {userCurrency}</span>
-                                                <span>Avg: {item.average.toLocaleString()} {userCurrency}</span>
+                                                <span>Current: {item.current.toLocaleString(getBestLocale(), {
+                                                    style: "currency",
+                                                    currency: userCurrency,
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                })}</span>
+                                                <span>Avg: {item.average.toLocaleString(getBestLocale(), {
+                                                    style: "currency",
+                                                    currency: userCurrency,
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                })}</span>
                                             </div>
                                         </div>
                                     </div>

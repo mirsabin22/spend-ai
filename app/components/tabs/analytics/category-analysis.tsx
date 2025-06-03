@@ -1,5 +1,7 @@
 "use client"
 
+import { getBestLocale } from "@/app/utils"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
@@ -21,6 +23,7 @@ export function CategoryAnalysis() {
     amount: number;
     originalCurrency: string;
     convertedAmount: number;
+    convertedCurrency: string;
     category: string;
     createdAt: string;
   }[]>([])
@@ -44,6 +47,7 @@ export function CategoryAnalysis() {
         amount: expense.amount,
         originalCurrency: expense.currency,
         convertedAmount: expense.convertedAmount,
+        convertedCurrency: expense.convertedCurrency,
         category: expense.category,
         createdAt: expense.createdAt.toISOString(),
       })))
@@ -67,7 +71,14 @@ export function CategoryAnalysis() {
                     <span className="text-sm font-medium">{category.category}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-medium">{category.amount.toLocaleString()} {userCurrency}</span>
+                    <span className="text-sm font-medium">
+                      {category.amount.toLocaleString(getBestLocale(), {
+                        style: "currency",
+                        currency: userCurrency,
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
                     <span className="ml-1 text-xs text-muted-foreground">({category.percentage}%)</span>
                   </div>
                 </div>
@@ -106,9 +117,21 @@ export function CategoryAnalysis() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-base font-medium">{expense.convertedAmount.toLocaleString()} {userCurrency}</p>
+                  <p className="text-base font-medium">
+                    {expense.convertedAmount.toLocaleString(getBestLocale(), {
+                      style: "currency",
+                      currency: expense.convertedCurrency,
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {expense.amount.toLocaleString()} {expense.originalCurrency}
+                    {expense.amount.toLocaleString(getBestLocale(), {
+                      style: "currency",
+                      currency: expense.originalCurrency,
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
               </div>

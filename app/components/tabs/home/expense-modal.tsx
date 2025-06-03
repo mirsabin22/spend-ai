@@ -1,9 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Edit, Trash } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { X, Edit, Trash, Calculator } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { CATEGORIES } from "@/app/constants"
 import { getAvailableCurrenciesAction } from "@/app/actions"
+import { getBestLocale } from "@/app/utils"
+import CategoryBadge from "./category-badges"
+import { formatDistanceToNow, format } from "date-fns"
 
 type Expense = {
     id: string
@@ -13,6 +26,8 @@ type Expense = {
     amount: number
     currency: string
     createdAt: string
+    convertedAmount: number
+    convertedCurrency: string
 }
 
 type Props = {
@@ -64,100 +79,138 @@ export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Pro
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white rounded-md p-6 w-full max-w-md relative shadow-lg">
-                <button
+                <Button
                     onClick={onClose}
+                    variant="outline"
+                    size="sm"
                     className="absolute top-3 right-3 text-gray-600 hover:text-gray-900"
                     aria-label="Close modal"
                 >
                     <X size={20} />
-                </button>
+                </Button>
 
                 {!isEdit ? (
                     <>
                         <h3 className="text-xl font-semibold mb-4">{expense.name}</h3>
-                        <p className="mb-2">{expense.description}</p>
-                        <p className="mb-2">Category: {expense.category}</p>
-                        <p className="mb-2">Amount: {expense.currency} {expense.amount.toLocaleString()}</p>
-                        <p className="mb-4 text-sm text-gray-500">Created at: {new Date(expense.createdAt).toLocaleString()}</p>
+                        <p className="mb-2 text-sm">{expense.description}</p>
+                        <p className="mb-2"><CategoryBadge category={expense.category} /></p>
+                        <p className="mb-2 text-sm">{expense.amount.toLocaleString(getBestLocale(), {
+                            style: "currency",
+                            currency: expense.currency,
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}</p>
+                        <div className="flex items-center gap-2">
+                            <Calculator size={20}/>
+                            <p className="mb-2 font-bold">{expense.convertedAmount.toLocaleString(getBestLocale(), {
+                            style: "currency",
+                            currency: expense.convertedCurrency,
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}</p>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <p className="text-sm text-gray-500">{format(new Date(expense.createdAt), "dd MMM yyyy HH:mm:ss")}, {formatDistanceToNow(new Date(expense.createdAt), { addSuffix: true })}</p>
+                        </div>
                         <div className="flex justify-end space-x-3">
-                            <button
+                            <Button
                                 onClick={() => setIsEdit(true)}
-                                className="flex items-center gap-1 px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 px-3 py-1 border-gray-300 rounded hover:bg-gray-100"
                             >
                                 <Edit size={16} /> Edit
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={handleDelete}
-                                className="flex items-center gap-1 px-3 py-1 border border-red-500 text-red-600 rounded hover:bg-red-100"
+                                variant="destructive"
+                                size="sm"
+                                className="flex items-center gap-1 px-3 py-1 rounded hover:bg-red-100"
                             >
                                 <Trash size={16} /> Delete
-                            </button>
+                            </Button>
                         </div>
                     </>
                 ) : (
                     <>
                         <h3 className="text-xl font-semibold mb-4">Edit Expense</h3>
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData?.name || ""}
-                            onChange={handleChange}
-                            placeholder="Name"
-                            className="w-full mb-2 px-3 py-1 border rounded"
+                        <Input
+                          type="text"
+                          name="name"
+                          value={formData?.name || ""}
+                          onChange={handleChange}
+                          placeholder="Name"
+                          className="mb-2"
                         />
-                        <textarea
-                            name="description"
-                            value={formData?.description || ""}
-                            onChange={handleChange}
-                            placeholder="Description"
-                            className="w-full mb-2 px-3 py-1 border rounded resize-none"
-                            rows={3}
+                        <Textarea
+                          name="description"
+                          value={formData?.description || ""}
+                          onChange={handleChange}
+                          placeholder="Description"
+                          rows={3}
+                          className="mb-2"
                         />
-                        <select
-                            name="category"
-                            value={formData?.category || ""}
-                            onChange={handleChange}
-                            className="w-full mb-2 px-3 py-1 border rounded"
+                        <Select
+                          value={formData?.category}
+                          onValueChange={(val) =>
+                            handleChange({
+                              target: { name: "category", value: val },
+                            } as any)
+                          }
                         >
+                          <SelectTrigger className="w-full mb-2">
+                            <SelectValue placeholder="Category" />
+                          </SelectTrigger>
+                          <SelectContent>
                             {CATEGORIES.map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
-                                </option>
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
                             ))}
-                        </select>
-                        <input
-                            type="number"
-                            name="amount"
-                            value={formData?.amount || 0}
-                            onChange={handleChange}
-                            placeholder="Amount"
-                            className="w-full mb-2 px-3 py-1 border rounded"
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          name="amount"
+                          value={formData?.amount || 0}
+                          onChange={handleChange}
+                          placeholder="Amount"
+                          className="mb-2"
                         />
-                        <select
-                            name="currency"
-                            value={formData?.currency || ""}
-                            onChange={handleChange}
-                            className="w-full mb-4 px-3 py-1 border rounded"
+                        <Select
+                          value={formData?.currency}
+                          onValueChange={(val) =>
+                            handleChange({
+                              target: { name: "currency", value: val },
+                            } as any)
+                          }
                         >
+                          <SelectTrigger className="w-full mb-4">
+                            <SelectValue placeholder="Currency" />
+                          </SelectTrigger>
+                          <SelectContent>
                             {currencies.map((currency) => (
-                                <option key={currency} value={currency}>
-                                    {currency}
-                                </option>
+                              <SelectItem key={currency} value={currency}>
+                                {currency}
+                              </SelectItem>
                             ))}
-                        </select>
+                          </SelectContent>
+                        </Select>
                         <div className="flex justify-end space-x-3">
-                            <button
+                            <Button
                                 onClick={() => setIsEdit(false)}
-                                className="px-3 py-1 border rounded hover:bg-gray-100"
+                                variant="ghost"
+                                size="sm"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={handleSave}
-                                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                variant="default"
+                                size="sm"
                             >
                                 Save
-                            </button>
+                            </Button>
                         </div>
                     </>
                 )}

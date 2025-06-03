@@ -82,7 +82,8 @@ export async function getTransactionsAction(filter?: {
     endDate?: Date;
 }) {
     const userId = await requireAuth()
-    return await getTransactions(userId, filter)
+    const user = await getUser(userId)
+    return await getTransactions(userId, user?.currency, filter)
 }
 
 export async function deleteTransactionAction(id: string) {

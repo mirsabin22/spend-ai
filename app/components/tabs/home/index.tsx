@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Trash } from "lucide-react"
 import DirectInput from "./direct-input"
 import CategoryBadge from "./category-badges"
 import ExpenseModal from "./expense-modal"
@@ -12,7 +11,17 @@ import {
     getTransactionsAction,
     deleteTransactionAction,
     updateTransactionAction,
+    getUserAction,
 } from "@/app/actions"
+import { getBestLocale } from "@/app/utils"
+import { ChevronRight } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type Expense = {
     id: string
@@ -21,10 +30,13 @@ type Expense = {
     category: string
     amount: number
     currency: string
+    convertedAmount: number
+    convertedCurrency: string
     createdAt: string
 }
 
 export default function HomeTab() {
+    const [userCurrency, setUserCurrency] = useState<string>()
     const [text, setText] = useState("")
     const [transactions, setTransactions] = useState<Expense[]>([])
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
@@ -38,11 +50,22 @@ export default function HomeTab() {
 
     const fetchData = async () => {
         setLoading(true)              // Start loading
-        const result = await getTransactionsAction()
+        const user = await getUserAction()
+        setUserCurrency(user?.currency)
+        // Set startOfDay and endOfDay for today
+        const today = new Date();
+        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+        const result = await getTransactionsAction({
+            startDate: startOfDay,
+            endDate: endOfDay,
+        })
         setTransactions(result.map(tx => ({
             ...tx,
             description: tx.description || "",
             createdAt: tx.createdAt.toISOString(),
+            convertedAmount: tx.convertedAmount,
+            convertedCurrency: tx.convertedCurrency,
         })))
         setLoading(false)             // End loading
     }
@@ -113,29 +136,27 @@ export default function HomeTab() {
             <DirectInput inputText={text} setInputText={setText} onSubmit={onSubmit} />
 
             <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
-                <select
-                    className="border px-3 py-1 rounded-md text-sm"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    disabled={loading}
-                >
-                    <option value="all">All Categories</option>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={loading}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {uniqueCategories.map((cat) => (
-                        <option key={cat} value={cat}>
-                            {cat}
-                        </option>
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
-                </select>
+                  </SelectContent>
+                </Select>
 
-                <select
-                    className="border px-3 py-1 rounded-md text-sm"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                    disabled={loading}
-                >
-                    <option value="asc">Amount: Low to High</option>
-                    <option value="desc">Amount: High to Low</option>
-                </select>
+                <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as "asc" | "desc")} disabled={loading}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">Amount: Low to High</SelectItem>
+                    <SelectItem value="desc">Amount: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
 
             <div className="space-y-2">
@@ -153,25 +174,35 @@ export default function HomeTab() {
                             <CardContent className="px-4">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <div className="font-semibold"> {tx.name.length > 30 ? tx.name.slice(0, 30) + "..." : tx.name}</div>
-                                        <div className="text-sm text-muted-foreground"> {tx.description.length > 30 ? tx.description.slice(0, 30) + "..." : tx.description}</div>
+                                        <div className="font-semibold"> {tx.name.length > 40 ? tx.name.slice(0, 40) + "..." : tx.name}</div>
+                                        <div className="text-sm text-muted-foreground"> {tx.description.length > 40 ? tx.description.slice(0, 40) + "..." : tx.description}</div>
                                         <div className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(tx.createdAt), { addSuffix: true })}</div>
                                     </div>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            onDelete(tx.id)
-                                        }}
-                                        className="text-red-500 hover:text-red-700"
-                                    >
-                                        <Trash className="w-4 h-4" />
-                                    </button>
+                                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                 </div>
-                                <div className="mt-2 flex justify-between text-sm">
-                                    <CategoryBadge category={tx.category} />
-                                    <span>
-                                        {tx.amount.toLocaleString()} {tx.currency}
-                                    </span>
+                                <div className="mt-2 flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <CategoryBadge category={tx.category} />
+                                    </div>
+                                    {/* show original and converted amount */}
+                                    <div className="text-right">
+                                        <p className="text-base font-medium">
+                                            {tx.convertedAmount.toLocaleString(getBestLocale(), {
+                                                style: "currency",
+                                                currency: tx.convertedCurrency,
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            })}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {tx.amount.toLocaleString(getBestLocale(), {
+                                                style: "currency",
+                                                currency: tx.currency,
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            })}
+                                        </p>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
