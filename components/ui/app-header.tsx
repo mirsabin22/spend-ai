@@ -1,14 +1,46 @@
 "use client"
 
-import { CreditCard } from "lucide-react"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { LogOut } from "lucide-react"
+import { signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 
-export function AppHeader() {
+export default function AppHeader() {
+    const { data: session } = useSession()
+
     return (
-        <div className="flex h-14 items-center justify-between bg-primary px-4 text-primary-foreground">
-            <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                <h1 className="text-lg font-medium">SpendTrack</h1>
-            </div>
+      <div className="flex h-14 items-center justify-between bg-white px-6 text-gray-900 border-b sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-primary">Spend AI</h1>
         </div>
+        <div className="flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer">
+                <AvatarImage src={session?.user?.image || ""} />
+                <AvatarFallback>
+                  {session?.user?.name?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="">
+              <DropdownMenuItem onClick={() => signOut()}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
     )
 }
