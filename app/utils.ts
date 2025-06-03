@@ -8,4 +8,4 @@ export function getBestLocale(): string {
       return navigator.language; // misalnya: "id-ID", "en-US"
     }
     return "en-US"; // fallback default
-  }
+}

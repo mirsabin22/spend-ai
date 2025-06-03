@@ -14,14 +14,14 @@ export const CATEGORIES = [
 ]
 
 export const CATEGORY_COLORS = {
-    "Food": "bg-green-500",
-    "Transportation": "bg-blue-500",
-    "Shopping": "bg-purple-500",
-    "Health and Fitness": "bg-green-500",
-    "Entertainment": "bg-yellow-500",
-    "Education": "bg-blue-500",
-    "Utilities": "bg-red-500",
-    "Other": "bg-gray-500",
+    Food: "bg-green-100 text-green-800",
+    Transportation: "bg-blue-100 text-blue-800",
+    Shopping: "bg-pink-100 text-pink-800",
+    "Health and Fitness": "bg-red-100 text-red-800",
+    Entertainment: "bg-yellow-100 text-yellow-800",
+    Education: "bg-purple-100 text-purple-800",
+    Utilities: "bg-gray-100 text-gray-800",
+    Other: "bg-zinc-100 text-zinc-800",
 }
 
 export const CATEGORY_ICONS = {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import DirectInput from "./direct-input"
 import CategoryBadge from "./category-badges"
 import ExpenseModal from "./expense-modal"
@@ -14,7 +14,7 @@ import {
     getUserAction,
 } from "@/app/actions"
 import { getBestLocale } from "@/app/utils"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, ChevronUp, ChevronDown, PieChart } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
 
 type Expense = {
     id: string
@@ -43,6 +44,7 @@ export default function HomeTab() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
     const [loading, setLoading] = useState(false)  // Loading state
+    const [isExpanded, setIsExpanded] = useState(false)
 
     useEffect(() => {
         fetchData()
@@ -111,6 +113,32 @@ export default function HomeTab() {
 
     const uniqueCategories = Array.from(new Set(transactions.map(tx => tx.category)))
 
+    const totalSpent = filteredAndSorted.reduce((sum, tx) => sum + tx.convertedAmount, 0)
+
+    const categoryMap = new Map<string, number>()
+    filteredAndSorted.forEach(tx => {
+      categoryMap.set(tx.category, (categoryMap.get(tx.category) || 0) + tx.convertedAmount)
+    })
+    const categoryTotals = Array.from(categoryMap.entries()).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0
+    }))
+
+    const getCategoryBarColor = (category: string) => {
+      const colors: Record<string, string> = {
+        Food: CATEGORY_COLORS.Food,
+        Transportation: CATEGORY_COLORS.Transportation,
+        Shopping: CATEGORY_COLORS.Shopping,
+        "Health and Fitness": CATEGORY_COLORS["Health and Fitness"],
+        Entertainment: CATEGORY_COLORS.Entertainment,
+        Education: CATEGORY_COLORS.Education,
+        Utilities: CATEGORY_COLORS.Utilities,
+        Other: CATEGORY_COLORS.Other,
+      }
+      return colors[category] || "bg-gray-400"
+    }
+
     // Skeleton loader component for placeholder cards
     const SkeletonCard = () => (
         <Card className="animate-pulse">
@@ -159,6 +187,68 @@ export default function HomeTab() {
                 </Select>
             </div>
 
+            <Card className="border-none shadow-sm transition-all duration-200 cursor-pointer mt-4" onClick={() => setIsExpanded(!isExpanded)}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Today's Overview</CardTitle>
+                  {isExpanded ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {totalSpent.toLocaleString(getBestLocale(), {
+                        style: "currency",
+                        currency: userCurrency || "USD",
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">spent today</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{filteredAndSorted.length} transactions</p>
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="mt-4 space-y-3 pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <PieChart className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-medium">Category Breakdown</p>
+                    </div>
+
+                    {categoryTotals.map((category, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span>{CATEGORY_ICONS[category.category as keyof typeof CATEGORY_ICONS]} {category.category}</span>
+                          <span>
+                            {category.amount.toLocaleString(getBestLocale(), {
+                              style: "currency",
+                              currency: userCurrency || "USD",
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })} ({category.percentage}%)
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-secondary">
+                          <div
+                            className={`h-full rounded-full ${getCategoryBarColor(category.category)}`}
+                            style={{ width: `${category.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="space-y-2">
                 <h2 className="text-lg font-semibold mb-2 mt-4">Today's Expenses</h2>
 
@@ -169,7 +259,7 @@ export default function HomeTab() {
                         <Card
                             key={tx.id}
                             onClick={() => setSelectedExpense(tx)}
-                            className="cursor-pointer hover:shadow-md transition"
+                            className="cursor-pointer hover:shadow-md transition shadow-none"
                         >
                             <CardContent className="px-4">
                                 <div className="flex justify-between items-start">
