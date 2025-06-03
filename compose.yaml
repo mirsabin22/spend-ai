@@ -11,10 +11,14 @@ services:
   server:
     build:
       context: .
+      args:
+        OPENAI_API_KEY: ${OPENAI_API_KEY}
+        UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL}
+        UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN}
     environment:
       NODE_ENV: production
     ports:
-      - 3000:3000
+      - 8080:3000
     env_file:
       - .env
     volumes:
