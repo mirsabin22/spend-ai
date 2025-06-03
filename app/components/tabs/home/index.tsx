@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 type Expense = {
     id: string
@@ -42,9 +43,10 @@ export default function HomeTab() {
     const [transactions, setTransactions] = useState<Expense[]>([])
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null)
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "newest">("newest")
     const [loading, setLoading] = useState(false)  // Loading state
     const [isExpanded, setIsExpanded] = useState(false)
+    const [parent] = useAutoAnimate();  // animation
 
     useEffect(() => {
         fetchData()
@@ -107,9 +109,13 @@ export default function HomeTab() {
     }
 
     const filteredAndSorted = transactions
-        .filter(tx => isToday(tx.createdAt))
-        .filter(tx => selectedCategory === "all" || tx.category === selectedCategory)
-        .sort((a, b) => (sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount))
+      .filter(tx => isToday(tx.createdAt))
+      .filter(tx => selectedCategory === "all" || tx.category === selectedCategory)
+      .sort((a, b) => {
+        if (sortOrder === "asc") return a.amount - b.amount
+        if (sortOrder === "desc") return b.amount - a.amount
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() // newest
+      })
 
     const uniqueCategories = Array.from(new Set(transactions.map(tx => tx.category)))
 
@@ -176,13 +182,14 @@ export default function HomeTab() {
                   </SelectContent>
                 </Select>
 
-                <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as "asc" | "desc")} disabled={loading}>
+                <Select value={sortOrder} onValueChange={(val) => setSortOrder(val as "asc" | "desc" | "newest")} disabled={loading}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="asc">Amount: Low to High</SelectItem>
-                    <SelectItem value="desc">Amount: High to Low</SelectItem>
+                    <SelectItem value="asc">Low to High</SelectItem>
+                    <SelectItem value="desc">High to Low</SelectItem>
+                    <SelectItem value="newest">Latest</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
@@ -249,13 +256,10 @@ export default function HomeTab() {
               </CardContent>
             </Card>
 
-            <div className="space-y-2">
+            <div ref={parent} className="space-y-2">
                 <h2 className="text-lg font-semibold mb-2 mt-4">Today's Expenses</h2>
 
-                {loading
-                    ? // Show 4 skeleton cards while loading
-                    Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-                    : filteredAndSorted.map((tx) => (
+                {filteredAndSorted.map((tx) => (
                         <Card
                             key={tx.id}
                             onClick={() => setSelectedExpense(tx)}
