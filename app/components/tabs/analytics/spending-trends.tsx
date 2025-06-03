@@ -107,7 +107,7 @@ export function SpendingTrends() {
                         value={historyCount}
                         onChange={(e) => setHistoryCount(Number(e.target.value))}
                     >
-                        {[1, 3, 6, 12].map((n) => (
+                        {[3, 6, 12].map((n) => (
                             <option key={n} value={n}>
                                 {n} {period === "monthly" ? "months" : period === "weekly" ? "weeks" : "days"}
                             </option>

@@ -56,8 +56,6 @@ ARG UPSTASH_REDIS_REST_URL
 ARG UPSTASH_REDIS_REST_TOKEN
 
 # Use production node environment by default for build.
-ENV NODE_ENV production
-ENV AUTH_TRUST_HOST true
 ENV OPENAI_API_KEY=$OPENAI_API_KEY
 ENV UPSTASH_REDIS_REST_URL=$UPSTASH_REDIS_REST_URL
 ENV UPSTASH_REDIS_REST_TOKEN=$UPSTASH_REDIS_REST_TOKEN
@@ -70,6 +68,8 @@ RUN pnpm run build
 # where the necessary files are copied from the build stage.
 FROM base as final
 
+ENV NODE_ENV production
+ENV AUTH_TRUST_HOST true
 
 # Run the application as a non-root user.
 USER node
