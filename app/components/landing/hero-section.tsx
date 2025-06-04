@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Globe, MessageSquare, TrendingUp } from "lucide-react"
 import Link from "next/link"
+import InstallPrompt from "@/app/components/install-prompt"
 
 export function HeroSection() {
   return (
@@ -28,6 +29,9 @@ export function HeroSection() {
           <Button size="lg" variant="outline" className="text-lg">
             Watch Demo
           </Button>
+        </div>
+        <div className="mt-6">
+            <InstallPrompt />
         </div>
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="flex flex-col items-center">
