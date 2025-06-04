@@ -26,8 +26,10 @@ import { getCategoryBreakdownAction, getTopExpensesAction, getUserAction } from 
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
 import DatePickerWithRange from "@/app/components/DatePickerWithRange"
 import type { DateRange } from "react-day-picker"
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 export function CategoryAnalysis() {
+  const [parent] = useAutoAnimate();  // animation
   const [userCurrency, setUserCurrency] = useState<string>()
 
   const [date, setDate] = useState<DateRange | undefined>({
@@ -119,7 +121,7 @@ export function CategoryAnalysis() {
           <CardTitle className="text-base">Category Breakdown</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div ref={parent} className="space-y-4">
             {categoryData.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">
                 No expenses found starting from {date?.from ? format(date.from, "PPP") : "the selected date"}.
@@ -174,7 +176,7 @@ export function CategoryAnalysis() {
           </Select>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div ref={parent} className="space-y-3">
             {topExpenses.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground">
                 No expenses found starting from {date?.from ? format(date.from, "PPP") : "the selected date"}.

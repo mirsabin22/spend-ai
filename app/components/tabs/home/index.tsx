@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select"
 import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import CountUp from "react-countup";
 
 type Expense = {
     id: string
@@ -209,17 +210,26 @@ export default function HomeTab() {
                 <div className="flex items-baseline justify-between">
                   <div>
                     <p className="text-2xl font-bold">
-                      {totalSpent.toLocaleString(getBestLocale(), {
-                        style: "currency",
-                        currency: userCurrency || "USD",
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                        {!userCurrency ? "" : (
+                            <CountUp
+                                start={0}
+                                end={totalSpent}
+                                duration={0.5}
+                                separator=","
+                                decimals={2}
+                                prefix={new Intl.NumberFormat(getBestLocale(), {
+                                    style: "currency",
+                                    currency: userCurrency,
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                            }).format(0).replace(/\d/g, "")} // ambil prefix mata uang (misalnya "$", "Rp")
+                        />
+                        )}
                     </p>
                     <p className="text-sm text-muted-foreground">spent today</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{filteredAndSorted.length} transactions</p>
+                    <p className="text-sm font-medium animate-pulse">{filteredAndSorted.length} transactions</p>
                   </div>
                 </div>
 

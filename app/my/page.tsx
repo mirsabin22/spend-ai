@@ -1,9 +1,9 @@
-import Link from "next/link"
+"use client"
+
 import {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContent,
 } from "@/components/ui/tabs"
 
 import { Home, PieChart, Clock, Settings } from "lucide-react"
@@ -13,44 +13,45 @@ import AnalyticsTab from "@/app/components/tabs/analytics"
 import TransactionsTab from "@/app/components/tabs/transactions"
 import SettingsTab from "@/app/components/tabs/settings"
 
-import auth from "@/middleware"
-import { getUserAction } from "../actions"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
 
-export default async function My() {
-  const session = await auth()
-  
-  if (!session?.user?.id) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-4">
-        <p>You are not logged in.</p>
-        <Link
-          href="/api/auth/signin"
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-          Sign in
-        </Link>
-      </div>
-    )
-  }
-  
-  const userSettings = await getUserAction()
-  
+export default function My() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const initialTab = searchParams.get("tab") || "home"
+  const [tab, setTab] = useState(initialTab)
+  const [mountedTabs, setMountedTabs] = useState(new Set([initialTab]))
+
+  useEffect(() => {
+    router.replace(`?tab=${tab}`)
+    setMountedTabs((prev) => new Set(prev).add(tab))
+  }, [tab])
+
   return (
-    <Tabs defaultValue="home" className="flex flex-col min-h-screen w-full">
+    <Tabs value={tab} onValueChange={setTab} className="flex flex-col min-h-screen w-full">
       {/* Main content */}
       <div className="flex-1 overflow-auto pb-20">
-        <TabsContent value="home">
-          <HomeTab />
-        </TabsContent>
-        <TabsContent value="analytics">
-          <AnalyticsTab/>
-        </TabsContent>
-        <TabsContent value="transactions">
-          <TransactionsTab />
-        </TabsContent>
-        <TabsContent value="settings">
-          <SettingsTab />
-        </TabsContent>
+      {mountedTabs.has("home") && (
+          <div className={tab === "home" ? "" : "hidden"}>
+            <HomeTab />
+          </div>
+        )}
+        {mountedTabs.has("analytics") && (
+          <div className={tab === "analytics" ? "" : "hidden"}>
+            <AnalyticsTab/>
+          </div>
+        )}
+        {mountedTabs.has("transactions") && (
+          <div className={tab === "transactions" ? "" : "hidden"}>
+            <TransactionsTab />
+          </div>
+        )}
+        {mountedTabs.has("settings") && (
+          <div className={tab === "settings" ? "" : "hidden"}>
+            <SettingsTab/>
+          </div>
+        )}
       </div>
 
       {/* Bottom nav bar */}

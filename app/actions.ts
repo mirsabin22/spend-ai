@@ -17,6 +17,7 @@ import {
  } from "./repository"
 import { textToExpense } from "./ai_actions"
 import { auth } from "@/auth"
+import { getBestLocale } from "./utils"
 
 export async function getConversionRateFromUSDAction(toCurrency: string) {
     return await getConversionRateFromUSD(toCurrency)
@@ -135,6 +136,16 @@ export async function getTopExpensesAction(filter?: {
 
 
 export async function getAvailableCurrenciesAction() {
-    return Object.keys(await getCachedExchangeRates())
-}
+    const rates = await getCachedExchangeRates()
+    const currencyCodes = Object.keys(rates)
+  
+    const displayNames = new Intl.DisplayNames(getBestLocale(), {
+      type: 'currency',
+    })
+  
+    return currencyCodes.map(code => ({
+      code,
+      name: displayNames.of(code),
+    }))
+  }
     

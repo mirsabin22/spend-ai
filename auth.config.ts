@@ -14,5 +14,10 @@ export default {
                 }
             }
         })
-    ]
+    ],
+    session: {
+        strategy: "jwt",
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+        updateAge: 60 * 60 * 24 * 7, // 7 days
+    },
 } satisfies NextAuthConfig

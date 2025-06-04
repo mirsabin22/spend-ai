@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/select"
 
 export default function SettingsTab() {
-  const [userCurrency, setUserCurrency] = useState<string | undefined>()
-  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([])
+  const [userCurrency, setUserCurrency] = useState<string | undefined>(undefined)
+  const [availableCurrencies, setAvailableCurrencies] = useState<{code: string, name: string | undefined}[]>([])
   const [currencySaved, setCurrencySaved] = useState(false)
 
   useEffect(() => {
@@ -44,16 +44,20 @@ export default function SettingsTab() {
             onValueChange={(value) => setUserCurrency(value)}
           >
             <SelectTrigger id="currency">
-              <SelectValue placeholder="Select a currency" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {availableCurrencies.map((currency) => (
-                <SelectItem key={currency} value={currency}>
-                  {currency}
+                <SelectItem key={currency.code} value={currency.code}>
+                  {currency.name} - {currency.code}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {/* availableCurrencies number */}
+          <p className="text-sm text-muted-foreground">
+            {availableCurrencies.length} currencies available
+          </p>
         </div>
         <Button
           onClick={async () => {
