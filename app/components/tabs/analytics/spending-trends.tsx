@@ -4,92 +4,110 @@ import { getBestLocale } from "@/app/utils"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowUpIcon, ArrowDownIcon, AlertTriangle, Dot } from "lucide-react"
-import { useEffect, useState } from "react"
-import { getSpendingTrendsAction, getCategorySpendingComparisonAction, getUserAction, getInsightsAction } from "@/app/actions"
-import { getInsights } from "@/app/ai_actions"
-import { format, getISOWeek } from "date-fns"
+import { ArrowUpIcon, ArrowDownIcon, Dot } from "lucide-react"
+import { useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSpendingTrendsAction, getCategorySpendingComparisonAction, getInsightsAction } from "@/app/actions"
+import { format, getISOWeek, endOfWeek, startOfWeek } from "date-fns"
 import { CATEGORY_ICONS } from "@/app/constants"
+import { DateRange } from "react-day-picker"
+
+const getFilter = () => {
+    const queryClient = useQueryClient()
+    const filterQuery = useQuery({
+        queryKey: ['trendsFilter'],
+        queryFn: async () => {
+            return queryClient.getQueryData<{ period: "daily" | "weekly" | "monthly", historyCount: number }>(['trendsFilter'])
+        },
+        initialData: {
+            period: "daily" as "daily" | "weekly" | "monthly",
+            historyCount: 3
+        },
+    })
+    const setFilter = (filter: { period: "daily" | "weekly" | "monthly", historyCount: number }) => {
+        queryClient.setQueryData(['trendsFilter'], filter)
+    }
+    return { query: filterQuery, setFilter }
+}
 
 export function SpendingTrends() {
-    const [spendingData, setSpendingData] = useState<{ period: string, total: number }[]>([])
-    const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily")
-    const [comparisonData, setComparisonData] = useState<{ category: string, current: number, average: number, status: "over" | "under", percentage: number }[]>([])
-    const [historyCount, setHistoryCount] = useState<number>(3)
-    const [userCurrency, setUserCurrency] = useState<string>()
-    const [insights, setInsights] = useState<string[]>([])
+    const { query: filterQuery, setFilter } = getFilter()
+    const filter = filterQuery.data ?? {
+        period: "daily" as "daily" | "weekly" | "monthly",
+        historyCount: 3
+    }
+
+    const spendingQuery = useQuery({
+      queryKey: ["spending", filter.period, filter.historyCount],
+      queryFn: async () => {
+        const trends = await getSpendingTrendsAction(filter.period, filter.historyCount)
+        return trends.map(t => {
+          let formattedPeriod = ""
+          if (filter.period === "daily") {
+            formattedPeriod = format(t.period, "dd/MM")
+          } else if (filter.period === "weekly") {
+            const weekNumber = getISOWeek(t.period)
+            const year = t.period.split("-")[0]
+            formattedPeriod = `W${weekNumber} ${year}`
+          } else {
+            formattedPeriod = format(t.period, "MMM yyyy")
+          }
+          return {
+            period: formattedPeriod,
+            total: Math.round(t.total),
+            currency: t.currency,
+          }
+        })
+      }
+    })
+
+    const comparisonQuery = useQuery({
+      queryKey: ["comparison", filter.period, filter.historyCount],
+      queryFn: async () => {
+        const trends = await getCategorySpendingComparisonAction(filter.period, filter.historyCount)
+        return trends.map(t => ({
+          category: t.category,
+          current: Math.round(t.current),
+          average: Math.round(t.average),
+          status: t.current > t.average ? "over" : "under",
+          percentage: Math.round(((t.current - t.average) / t.average) * 100),
+          currency: t.currency,
+        }))
+      }
+    })
+
+    const insightQuery = useQuery({
+      queryKey: ["insights", filter.period, filter.historyCount],
+      queryFn: async () => {
+        return await getInsightsAction("Period: " + filter.period + "\n" +
+          "History count: " + filter.historyCount + "\n" +
+          "Spending data: " + JSON.stringify(spendingQuery.data) + "\n" +
+          "Comparison data: " + JSON.stringify(comparisonQuery.data)
+        )
+      },
+      enabled: !!spendingQuery.data && !!comparisonQuery.data,
+      staleTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    })
+
+    const spendingData = spendingQuery.data ?? []
+    const comparisonData = comparisonQuery.data ?? []
+    const insights = insightQuery.data ?? []
 
     // Find the max value for scaling the chart
-    const maxSpendingAmount = Math.max(...spendingData.map((d) => d.total))
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            const user = await getUserAction()
-            setUserCurrency(user?.currency)
-        }
-        fetchUser()
-    }, [])
-
-    useEffect(() => {
-        const fetchComparisonData = async () => {
-            const trends = await getCategorySpendingComparisonAction(period, historyCount)
-            setComparisonData(trends.map(t => ({
-                category: t.category,
-                current: Math.round(t.current),
-                average: Math.round(t.average),
-                status: t.current > t.average ? "over" : "under",
-                percentage: Math.round(((t.current - t.average) / t.average) * 100),
-            })))
-        }
-        fetchComparisonData()
-    }, [period, historyCount])
-
-
-    useEffect(() => {
-        const fetchSpendingData = async () => {
-            const trends = await getSpendingTrendsAction(period, historyCount)
-            setSpendingData(trends.map(t => {
-                let formattedPeriod = ""
-                if (period === "daily") {
-                    formattedPeriod = format(t.period, "dd/MM")
-                } else if (period === "weekly") {
-                    const weekNumber = getISOWeek(t.period)
-                    const year = t.period.split("-")[0]
-                    formattedPeriod = `W${weekNumber} ${year}`
-                } else {
-                    formattedPeriod = format(t.period, "MMM yyyy")
-                }
-                return {
-                    period: formattedPeriod,
-                    total: Math.round(t.total),
-                }
-            }))
-        }
-        fetchSpendingData()
-    }, [period, historyCount])
-
-    useEffect(() => {
-        const fetchInsights = async () => {
-            const insights = await getInsightsAction("Period: " + period + "\n" +
-                "History count: " + historyCount + "\n" +
-                "Spending data: " + JSON.stringify(spendingData) + "\n" +
-                "Comparison data: " + JSON.stringify(comparisonData)
-            )
-            setInsights(insights)
-        }
-        fetchInsights()
-    }, [period, historyCount])
+    const maxSpendingAmount = Math.max(...spendingData.map((d) => d.total), 1)
 
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-4 mb-2">
                 <div className="space-y-1">
-                    <label htmlFor="period" className="block text-sm font-medium text-muted-foreground">Show data by</label>
+                    <label htmlFor="period" className="block text-sm font-medium text-muted-foreground">Period</label>
                     <select
                         id="period"
                         className="rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value as typeof period)}
+                        value={filter.period}
+                        onChange={(e) => setFilter({ ...filter, period: e.target.value as typeof filter.period })}
                     >
                         <option value="daily">Daily</option>
                         <option value="weekly">Weekly</option>
@@ -98,17 +116,17 @@ export function SpendingTrends() {
                 </div>
                 <div className="space-y-1 ml-auto">
                     <label htmlFor="historyCount" className="block text-sm font-medium text-muted-foreground">
-                        Average over how many periods?
+                        Average count
                     </label>
                     <select
                         id="historyCount"
                         className="rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm "
-                        value={historyCount}
-                        onChange={(e) => setHistoryCount(Number(e.target.value))}
+                        value={filter.historyCount}
+                        onChange={(e) => setFilter({ ...filter, historyCount: Number(e.target.value) })}
                     >
                         {[3, 6, 12].map((n) => (
                             <option key={n} value={n}>
-                                {n} {period === "monthly" ? "months" : period === "weekly" ? "weeks" : "days"}
+                                {n} {filter.period === "monthly" ? "months" : filter.period === "weekly" ? "weeks" : "days"}
                             </option>
                         ))}
                     </select>
@@ -117,7 +135,7 @@ export function SpendingTrends() {
             <Card className="border-none shadow-sm">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base">
-                        {period === "daily" ? "Daily Spending" : period === "weekly" ? "Weekly Spending" : "Monthly Spending"}
+                        {filter.period === "daily" ? "Daily Spending" : filter.period === "weekly" ? "Weekly Spending" : "Monthly Spending"}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -134,7 +152,7 @@ export function SpendingTrends() {
                                 <span className="text-xs text-muted-foreground">
                                     {day.total.toLocaleString(getBestLocale(), {
                                         style: "currency",
-                                        currency: userCurrency,
+                                        currency: day.currency,
                                         minimumFractionDigits: 2,
                                         maximumFractionDigits: 2,
                                     })}
@@ -191,13 +209,13 @@ export function SpendingTrends() {
                                             <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                                                 <span>Current: {item.current.toLocaleString(getBestLocale(), {
                                                     style: "currency",
-                                                    currency: userCurrency,
+                                                    currency: item.currency,
                                                     minimumFractionDigits: 2,
                                                     maximumFractionDigits: 2,
                                                 })}</span>
                                                 <span>Avg: {item.average.toLocaleString(getBestLocale(), {
                                                     style: "currency",
-                                                    currency: userCurrency,
+                                                    currency: item.currency,
                                                     minimumFractionDigits: 2,
                                                     maximumFractionDigits: 2,
                                                 })}</span>

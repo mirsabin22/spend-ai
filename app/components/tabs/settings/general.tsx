@@ -32,9 +32,9 @@ const getAvailableCurrenciesQuery = () => {
   }
 
 export default function GeneralSettings({
-    user,
+    currency,
   }: {
-    user: User
+    currency: string
   }) {
   
     const { data: availableCurrencies } = getAvailableCurrenciesQuery()
@@ -77,7 +77,7 @@ export default function GeneralSettings({
   
           {/* select currency */}
           <Select
-            value={user?.currency}
+            value={currency}
             onValueChange={(value) => updateMutation.mutate({ currency: value })}
           >
             <SelectTrigger id="currency">

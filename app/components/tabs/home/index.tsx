@@ -73,7 +73,6 @@ const useTransactionsQuery = (selectedCategory: string, sortOrder: string) => {
 
 const useTransactionFilters = () => {
   const queryClient = useQueryClient();
-  const { isFetching } = useQueryClient()
 
   const filtersQuery = useQuery({
     queryKey: ['transactionFilters'],

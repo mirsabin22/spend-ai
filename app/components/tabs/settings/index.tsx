@@ -4,28 +4,27 @@ import { getUserAction } from "@/app/actions"
 import { useQuery } from "@tanstack/react-query"
 import AiPromptSettings from "./ai-prompt"
 import GeneralSettings from "./general"
+import { DEFAULT_SYSTEM, INSIGHTS_SYSTEM } from "@/app/constants"
 
-const getMyQuery = () => {
-  return useQuery({
+
+export default function SettingsTab() {
+  const { data: user } = useQuery({
     queryKey: ['mySettings'],
     queryFn: async () => {
       const user = await getUserAction()
       return user
     },
-  })
-}
-
-export default function SettingsTab() {
-  const { data: user } = getMyQuery()
+  });
 
   return (
     <>
       <div className="max-w-md mx-auto">
         <GeneralSettings
-          user={user!}
+          currency={user?.currency || "USD"}
         />
         <AiPromptSettings
-          user={user!}
+          aiExpensePrompt={user?.aiExpensePrompt || DEFAULT_SYSTEM}
+          aiInsightPrompt={user?.aiInsightPrompt || INSIGHTS_SYSTEM}
         />
       </div>
     </>

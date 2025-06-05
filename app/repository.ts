@@ -209,6 +209,7 @@ export async function getCategoryBreakdown(
     .map(([category, amount]) => ({
       category,
       amount,
+      currency: targetCurrency,
       percentage: total > 0 ? Math.round((amount / total) * 100) : 0 // rounded to 2 decimal places
     }))
     .sort((a, b) => b.amount - a.amount);
@@ -278,7 +279,7 @@ export async function getSpendingTrends(
   }
 
   const sorted = Object.entries(totalsByPeriod)
-    .map(([key, total]) => ({ period: key, total }))
+    .map(([key, total]) => ({ period: key, total, currency: targetCurrency }))
     .sort((a, b) => a.period.localeCompare(b.period));
 
   return sorted;
@@ -326,6 +327,7 @@ export async function getCategorySpendingComparison(
       current: Math.round(item.amount),
       average: Math.round(avg),
       percentage: Math.round(percentDiff),
+      currency: targetCurrency,
     };
   });
 

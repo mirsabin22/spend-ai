@@ -21,7 +21,7 @@ export default function AppHeader() {
     return (
       <div className="flex h-14 items-center justify-between bg-white px-6 text-gray-900 border-b sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-primary">Spend AI</h1>
+          <h1 onClick={() => window.location.reload()} className="text-lg font-semibold text-primary cursor-pointer">Spend AI</h1>
         </div>
         <div className="flex items-center">
           <DropdownMenu>

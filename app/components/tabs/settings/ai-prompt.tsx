@@ -9,13 +9,14 @@ import { Info } from "lucide-react"
 import { DEFAULT_SYSTEM, INSIGHTS_SYSTEM } from "@/app/constants"
 import { updateUserAction } from "@/app/actions"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { User } from "@prisma/client"
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 
 export default function AiPromptSettings({
-    user,
+    aiExpensePrompt,
+    aiInsightPrompt,
 }: {
-    user: User
+    aiExpensePrompt: string | null
+    aiInsightPrompt: string | null
 }) {
     const [openAiExpenseGuide, setOpenAiExpenseGuide] = useState(false)
     const [openAiInsightGuide, setOpenAiInsightGuide] = useState(false)
@@ -36,9 +37,9 @@ export default function AiPromptSettings({
     const [parent] = useAutoAnimate()
 
     useEffect(() => {
-        setExpensePrompt(user?.aiExpensePrompt || DEFAULT_SYSTEM)
-        setInsightPrompt(user?.aiInsightPrompt || INSIGHTS_SYSTEM)
-    }, [user])
+        setExpensePrompt(aiExpensePrompt || DEFAULT_SYSTEM)
+        setInsightPrompt(aiInsightPrompt || INSIGHTS_SYSTEM)
+    }, [aiExpensePrompt, aiInsightPrompt])
 
     return (
         <div ref={parent} className="space-y-4 mt-8 p-6 bg-white rounded-lg shadow">
