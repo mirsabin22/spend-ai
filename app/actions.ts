@@ -13,7 +13,8 @@ import {
     getCategorySpendingComparison,
     getTopExpenses,
     UpdateUserInput,
-    getCachedExchangeRates
+    getCachedExchangeRates,
+    getLatestTransactions
  } from "./repository"
 import { textToExpense, getInsights } from "./ai_actions"
 import { auth } from "@/auth"
@@ -94,6 +95,12 @@ export async function getTransactionsAction(filter?: {
     const userId = await requireAuth()
     const user = await getUser(userId)
     return await getTransactions(userId, user?.currency, filter)
+}
+
+export async function getLatestTransactionsAction(limit: number = 3) {
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    return await getLatestTransactions(userId, user?.currency, limit)
 }
 
 export async function deleteTransactionAction(id: string) {

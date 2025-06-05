@@ -11,6 +11,7 @@ import {
   getTransactionsAction,
   deleteTransactionAction,
   updateTransactionAction,
+  getLatestTransactionsAction
 } from "@/app/actions"
 import { getBestLocale } from "@/app/utils"
 import { ChevronRight, ChevronUp, ChevronDown, PieChart, Loader2 } from "lucide-react"
@@ -25,6 +26,7 @@ import { CATEGORY_COLORS, CATEGORY_ICONS } from "@/app/constants"
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import CountUp from "react-countup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import LatestTransaction from "./latest-transaction"
 
 type Expense = {
   id: string
@@ -202,7 +204,7 @@ export default function HomeTab() {
           <div className="flex items-baseline justify-between">
             <div>
               <p className="text-2xl font-bold">
-                {!filteredTransactions?.length ? "" : (
+                {!filteredTransactions?.length ? "No transactions" : (
                   <CountUp
                     start={0}
                     end={totalSpent || 0}
@@ -266,8 +268,17 @@ export default function HomeTab() {
           {isLoading && (
             <Loader2 className="animate-spin" />
           )}
-
         </div>
+          {/* if no transactions in box style */}
+          {!isLoading && (filteredTransactions?.length ?? 0) === 0 && (
+            <Card className="border-dashed border-muted-foreground shadow-none">
+              <CardContent className="px-4">
+                <p className="text-muted-foreground text-sm">No transactions found today, try to add one :&#41;</p>
+              </CardContent>
+            </Card>
+          )}
+        {(filteredTransactions?.length ?? 0) > 0 ? (
+        <div ref={parent} className="space-y-2">
         {filteredTransactions?.map((tx) => (
           <Card
             key={tx.id}
@@ -283,10 +294,8 @@ export default function HomeTab() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </div>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <CategoryBadge category={tx.category} />
-                </div>
+              <div className="flex items-end justify-between text-sm">
+                <CategoryBadge category={tx.category} />
                 {/* show original and converted amount */}
                 <div className="text-right">
                   <p className="text-base font-medium">
@@ -311,7 +320,10 @@ export default function HomeTab() {
           </Card>
         ))}
       </div>
-
+      ) : (
+        <LatestTransaction />
+      )}
+      </div>
       {selectedExpense && (
         <ExpenseModal
           expense={selectedExpense}
