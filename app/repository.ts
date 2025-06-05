@@ -10,6 +10,8 @@ const redis = new Redis({
 
 export type UpdateUserInput = {
   currency?: string;
+  aiExpensePrompt?: string;
+  aiInsightPrompt?: string;
 }
 
 // Utility function to fetch and cache exchange rates

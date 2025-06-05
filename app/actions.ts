@@ -15,9 +15,10 @@ import {
     UpdateUserInput,
     getCachedExchangeRates
  } from "./repository"
-import { textToExpense } from "./ai_actions"
+import { textToExpense, getInsights } from "./ai_actions"
 import { auth } from "@/auth"
 import { getBestLocale } from "./utils"
+import { DEFAULT_SYSTEM, INSIGHTS_SYSTEM } from "./constants"
 
 export async function getConversionRateFromUSDAction(toCurrency: string) {
     return await getConversionRateFromUSD(toCurrency)
@@ -49,8 +50,16 @@ export async function requireAuth() {
 }
 
 export async function createTransactionFromTextAction(text: string) {
-    const expense = await textToExpense({ input: text })
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    const expense = await textToExpense({ system: user?.aiExpensePrompt || DEFAULT_SYSTEM, input: text })
     return await createTransactionAction(expense)
+}
+
+export async function getInsightsAction(input: string) {
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    return await getInsights({ system: user?.aiInsightPrompt || INSIGHTS_SYSTEM, input })
 }
 
 export async function createTransactionAction(data: {

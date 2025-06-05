@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpIcon, ArrowDownIcon, AlertTriangle, Dot } from "lucide-react"
 import { useEffect, useState } from "react"
-import { getSpendingTrendsAction, getCategorySpendingComparisonAction, getUserAction } from "@/app/actions"
+import { getSpendingTrendsAction, getCategorySpendingComparisonAction, getUserAction, getInsightsAction } from "@/app/actions"
 import { getInsights } from "@/app/ai_actions"
 import { format, getISOWeek } from "date-fns"
 import { CATEGORY_ICONS } from "@/app/constants"
@@ -70,12 +70,11 @@ export function SpendingTrends() {
 
     useEffect(() => {
         const fetchInsights = async () => {
-            const insights = await getInsights({
-                input: "Period: " + period + "\n" +
-                    "History count: " + historyCount + "\n" +
-                    "Spending data: " + JSON.stringify(spendingData) + "\n" +
-                    "Comparison data: " + JSON.stringify(comparisonData)
-            })
+            const insights = await getInsightsAction("Period: " + period + "\n" +
+                "History count: " + historyCount + "\n" +
+                "Spending data: " + JSON.stringify(spendingData) + "\n" +
+                "Comparison data: " + JSON.stringify(comparisonData)
+            )
             setInsights(insights)
         }
         fetchInsights()
