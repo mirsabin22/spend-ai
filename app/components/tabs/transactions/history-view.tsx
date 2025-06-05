@@ -29,6 +29,8 @@ export function HistoryView() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 3
 
     useEffect(() => {
         const fetchData = async () => {
@@ -47,6 +49,10 @@ export function HistoryView() {
         fetchData()
     }, [])
 
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchQuery, categoryFilter])
+
     const filteredTransactions = transactions.filter((tx) => {
         const matchCategory = categoryFilter === "all" || tx.category.toLowerCase() === categoryFilter
         const matchSearch =
@@ -54,6 +60,10 @@ export function HistoryView() {
             tx.description?.toLowerCase().includes(searchQuery.toLowerCase())
         return matchCategory && matchSearch
     })
+
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const paginatedTransactions = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem)
 
     return (
         <div className="space-y-4">
@@ -69,7 +79,7 @@ export function HistoryView() {
                     />
                 </div>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -82,7 +92,6 @@ export function HistoryView() {
                         <SelectItem value="utilities">Utilities</SelectItem>
                         <SelectItem value="health and fitness">Health</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
-
                     </SelectContent>
                 </Select>
             </div>
@@ -93,10 +102,10 @@ export function HistoryView() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
-                        {filteredTransactions.length === 0 ? (
+                        {paginatedTransactions.length === 0 ? (
                             <p className="text-muted-foreground text-sm">No transactions found.</p>
                         ) : (
-                            filteredTransactions.reduce((acc, transaction, i, arr) => {
+                            paginatedTransactions.reduce((acc, transaction, i, arr) => {
                                 const date = transaction.date
                                 const prevDate = i > 0 ? arr[i - 1].date : null
 
@@ -118,7 +127,6 @@ export function HistoryView() {
                                             >
                                                 {transaction.category}
                                             </Badge>
-
                                             <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>
                                         </div>
                                         <p className="font-medium">
@@ -131,6 +139,30 @@ export function HistoryView() {
                             }, [] as React.ReactNode[])
                         )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {filteredTransactions.length > itemsPerPage && (
+                        <div className="flex justify-end pt-6 space-x-2">
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 text-sm border rounded disabled:opacity-50"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() =>
+                                    setCurrentPage((prev) =>
+                                        prev < Math.ceil(filteredTransactions.length / itemsPerPage) ? prev + 1 : prev
+                                    )
+                                }
+                                disabled={currentPage >= Math.ceil(filteredTransactions.length / itemsPerPage)}
+                                className="px-3 py-1 text-sm border rounded disabled:opacity-50"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>
