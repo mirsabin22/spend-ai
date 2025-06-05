@@ -22,25 +22,35 @@ export default function My() {
   const router = useRouter()
   const initialTab = searchParams.get("tab") || "home"
   const [tab, setTab] = useState(initialTab)
+  const [lastClickedTab, setLastClickedTab] = useState("")
+  const [tabKey, setTabKey] = useState(0)
 
   useEffect(() => {
     router.replace(`?tab=${tab}`)
   }, [tab])
 
+  const handleTabClick = (tabName: string) => {
+    if (tab === tabName && lastClickedTab === tabName) {
+      console.log("refreshing")
+      setTabKey((prev) => prev + 1)
+    }
+    setLastClickedTab(tabName)
+  }
+
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-col min-h-screen w-full">
       {/* Main content */}
       <div className="flex-1 overflow-auto pb-20">
-        <TabsContent value="home">
+        <TabsContent value="home" key={tab === "home" ? tabKey : undefined}>
           <HomeTab />
         </TabsContent>
-        <TabsContent value="analytics">
+        <TabsContent value="analytics" key={tab === "analytics" ? tabKey : undefined}>
           <AnalyticsTab/>
         </TabsContent>
-        <TabsContent value="transactions">
+        <TabsContent value="transactions" key={tab === "transactions" ? tabKey : undefined}>
           <TransactionsTab />
         </TabsContent>
-        <TabsContent value="settings">
+        <TabsContent value="settings" key={tab === "settings" ? tabKey : undefined}>
           <SettingsTab />
         </TabsContent>
       </div>
@@ -49,6 +59,7 @@ export default function My() {
       <TabsList className="fixed bottom-0 left-0 right-0 z-50 flex justify-around border-t bg-white shadow-md h-20 px-2 w-full sm:max-w-md sm:mx-auto">
         <TabsTrigger
           value="home"
+          onClick={() => handleTabClick("home")}
           className="flex flex-col items-center justify-center h-full w-full gap-1 text-muted-foreground data-[state=active]:text-gray-600 data-[state=active]:font-semibold"
           aria-label="Home"
         >
@@ -58,6 +69,7 @@ export default function My() {
 
         <TabsTrigger
           value="analytics"
+          onClick={() => handleTabClick("analytics")}
           className="flex flex-col items-center justify-center h-full w-full gap-1 text-muted-foreground data-[state=active]:text-gray-600 data-[state=active]:font-semibold"
           aria-label="Analytics"
         >
@@ -67,6 +79,7 @@ export default function My() {
 
         <TabsTrigger
           value="transactions"
+          onClick={() => handleTabClick("transactions")}
           className="flex flex-col items-center justify-center h-full w-full gap-1 text-muted-foreground data-[state=active]:text-gray-600 data-[state=active]:font-semibold"
           aria-label="Transactions"
         >
@@ -76,6 +89,7 @@ export default function My() {
 
         <TabsTrigger
           value="settings"
+          onClick={() => handleTabClick("settings")}
           className="flex flex-col items-center justify-center h-full w-full gap-1 text-muted-foreground data-[state=active]:text-gray-600 data-[state=active]:font-semibold"
           aria-label="Settings"
         >
