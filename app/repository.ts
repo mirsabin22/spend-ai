@@ -60,6 +60,36 @@ export async function updateUser(userId: string, data: UpdateUserInput) {
   })
 }
 
+export async function getLatestTransactions(
+  userId: string,
+  targetCurrency: string = "USD",
+  limit: number = 3,
+) {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      userId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: limit,
+  });
+
+  const rates = await getCachedExchangeRates();
+  const targetRate = rates[targetCurrency];
+  if (!targetRate || targetRate === 0) {
+    throw new Error(`Rate for target currency ${targetCurrency} not found`);
+  }
+
+  return transactions.map(tx => ({
+    ...tx,
+    convertedAmount: tx.currency === targetCurrency
+      ? tx.amount
+      : tx.amount * targetRate / rates[tx.currency],
+    convertedCurrency: targetCurrency,
+  }));
+} 
+
 export async function getTransactions(
   userId: string,
   targetCurrency: string = "USD",
