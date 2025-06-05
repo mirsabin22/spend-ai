@@ -47,6 +47,9 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.12
         version: 1.1.12(@types/react-dom@19.1.5(@types/react@19.1.4))(@types/react@19.1.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tanstack/react-query':
+        specifier: ^5.80.5
+        version: 5.80.5(react@19.1.0)
       '@upstash/redis':
         specifier: ^1.34.9
         version: 1.34.9
@@ -883,6 +886,14 @@ packages:
 
   '@tailwindcss/postcss@4.1.7':
     resolution: {integrity: sha512-88g3qmNZn7jDgrrcp3ZXEQfp9CVox7xjP1HN2TFKI03CltPVd/c61ydn5qJJL8FYunn0OqBaW5HNUga0kmPVvw==}
+
+  '@tanstack/query-core@5.80.5':
+    resolution: {integrity: sha512-kFWXdQOUcjL/Ugk3GrI9eMuG3DsKBGaLIgyOLekR2UOrRrJgkLgPUNzZ10i8FCkfi4SgLABhOtQhx1HjoB9EZQ==}
+
+  '@tanstack/react-query@5.80.5':
+    resolution: {integrity: sha512-C0d+pvIahk6fJK5bXxyf36r9Ft6R9O0mwl781CjBrYGRJc76XRJcKhkVpxIo68cjMy3i47gd4O1EGooAke/OCQ==}
+    peerDependencies:
+      react: ^18 || ^19
 
   '@types/node-fetch@2.6.12':
     resolution: {integrity: sha512-8nneRWKCg3rMtF69nLQJnOYUcbafYeFSjqkw3jCRLsqkWFlHaoQrr5mXmofFGOx3DKn7UfmBMyov8ySvLRVldA==}
@@ -2315,6 +2326,13 @@ snapshots:
       '@tailwindcss/oxide': 4.1.7
       postcss: 8.5.3
       tailwindcss: 4.1.7
+
+  '@tanstack/query-core@5.80.5': {}
+
+  '@tanstack/react-query@5.80.5(react@19.1.0)':
+    dependencies:
+      '@tanstack/query-core': 5.80.5
+      react: 19.1.0
 
   '@types/node-fetch@2.6.12':
     dependencies:
