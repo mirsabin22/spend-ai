@@ -2,6 +2,7 @@
 
 import {
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
@@ -21,37 +22,27 @@ export default function My() {
   const router = useRouter()
   const initialTab = searchParams.get("tab") || "home"
   const [tab, setTab] = useState(initialTab)
-  const [mountedTabs, setMountedTabs] = useState(new Set([initialTab]))
 
   useEffect(() => {
     router.replace(`?tab=${tab}`)
-    setMountedTabs((prev) => new Set(prev).add(tab))
   }, [tab])
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-col min-h-screen w-full">
       {/* Main content */}
       <div className="flex-1 overflow-auto pb-20">
-      {mountedTabs.has("home") && (
-          <div className={tab === "home" ? "" : "hidden"}>
-            <HomeTab />
-          </div>
-        )}
-        {mountedTabs.has("analytics") && (
-          <div className={tab === "analytics" ? "" : "hidden"}>
-            <AnalyticsTab/>
-          </div>
-        )}
-        {mountedTabs.has("transactions") && (
-          <div className={tab === "transactions" ? "" : "hidden"}>
-            <TransactionsTab />
-          </div>
-        )}
-        {mountedTabs.has("settings") && (
-          <div className={tab === "settings" ? "" : "hidden"}>
-            <SettingsTab/>
-          </div>
-        )}
+        <TabsContent value="home">
+          <HomeTab />
+        </TabsContent>
+        <TabsContent value="analytics">
+          <AnalyticsTab/>
+        </TabsContent>
+        <TabsContent value="transactions">
+          <TransactionsTab />
+        </TabsContent>
+        <TabsContent value="settings">
+          <SettingsTab />
+        </TabsContent>
       </div>
 
       {/* Bottom nav bar */}
