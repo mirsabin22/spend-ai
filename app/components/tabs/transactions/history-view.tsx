@@ -1,14 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type React from "react"
+import { Search } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { CATEGORY_COLORS } from "@/app/constants"
 import { getTransactionsAction } from "@/app/actions"
+import DatePickerWithRange from "@/app/components/DatePickerWithRange"
+import { DateRange } from "react-day-picker"
 
 type Transaction = {
     id: string
@@ -31,12 +32,15 @@ export function HistoryView() {
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const itemsPerPage = 3
 
     const fetchTransactions = async () => {
         const { data, total } = await getTransactionsAction({
             search: searchQuery,
             category: categoryFilter === "all" ? undefined : categoryFilter,
+            startDate: dateRange?.from,
+            endDate: dateRange?.to,
             page: currentPage,
             limit: itemsPerPage,
         })
@@ -56,18 +60,18 @@ export function HistoryView() {
 
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, categoryFilter])
+    }, [searchQuery, categoryFilter, dateRange])
 
     useEffect(() => {
         fetchTransactions()
-    }, [searchQuery, categoryFilter, currentPage])
+    }, [searchQuery, categoryFilter, dateRange, currentPage])
 
     const totalPages = Math.ceil(totalCount / itemsPerPage)
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-                <div className="relative flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
@@ -77,6 +81,7 @@ export function HistoryView() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Category" />
@@ -93,6 +98,8 @@ export function HistoryView() {
                         <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                 </Select>
+
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </div>
 
             <Card>
@@ -117,7 +124,10 @@ export function HistoryView() {
                                 }
 
                                 acc.push(
-                                    <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
+                                    <div
+                                        key={transaction.id}
+                                        className="flex items-start justify-between border-b pb-4 last:border-0"
+                                    >
                                         <div>
                                             <p className="font-medium">{transaction.name}</p>
                                             <Badge
@@ -132,7 +142,8 @@ export function HistoryView() {
                                             <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>
                                         </div>
                                         <p className="font-medium">
-                                            {transaction.convertedCurrency} {transaction.convertedAmount.toLocaleString()}
+                                            {transaction.convertedCurrency}{" "}
+                                            {transaction.convertedAmount.toLocaleString()}
                                         </p>
                                     </div>
                                 )
@@ -142,7 +153,6 @@ export function HistoryView() {
                         )}
                     </div>
 
-                    {/* Pagination Controls */}
                     {totalPages > 1 && (
                         <div className="flex justify-end pt-6 space-x-2">
                             <button
