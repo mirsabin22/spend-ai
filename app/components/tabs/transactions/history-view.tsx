@@ -1,14 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import type React from "react"
+import { Search } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { CATEGORY_COLORS } from "@/app/constants"
 import { getTransactionsAction } from "@/app/actions"
+import DatePickerWithRange from "@/app/components/DatePickerWithRange"
+import { DateRange } from "react-day-picker"
 
 type Transaction = {
     id: string
@@ -27,48 +28,50 @@ type Transaction = {
 
 export function HistoryView() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [totalCount, setTotalCount] = useState(0)
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const itemsPerPage = 3
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const data = await getTransactionsAction()
-            const formatted = data.map((tx) => ({
-                ...tx,
-                date: new Date(tx.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                }),
-            }))
-            setTransactions(formatted)
-        }
+    const fetchTransactions = async () => {
+        const { data, total } = await getTransactionsAction({
+            search: searchQuery,
+            category: categoryFilter === "all" ? undefined : categoryFilter,
+            startDate: dateRange?.from,
+            endDate: dateRange?.to,
+            page: currentPage,
+            limit: itemsPerPage,
+        })
 
-        fetchData()
-    }, [])
+        const formatted = data.map((tx: any) => ({
+            ...tx,
+            date: new Date(tx.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            }),
+        }))
+
+        setTransactions(formatted)
+        setTotalCount(total)
+    }
 
     useEffect(() => {
         setCurrentPage(1)
-    }, [searchQuery, categoryFilter])
+    }, [searchQuery, categoryFilter, dateRange])
 
-    const filteredTransactions = transactions.filter((tx) => {
-        const matchCategory = categoryFilter === "all" || tx.category.toLowerCase() === categoryFilter
-        const matchSearch =
-            tx.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tx.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchCategory && matchSearch
-    })
+    useEffect(() => {
+        fetchTransactions()
+    }, [searchQuery, categoryFilter, dateRange, currentPage])
 
-    const indexOfLastItem = currentPage * itemsPerPage
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage
-    const paginatedTransactions = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem)
+    const totalPages = Math.ceil(totalCount / itemsPerPage)
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-                <div className="relative flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
@@ -78,6 +81,7 @@ export function HistoryView() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Category" />
@@ -94,6 +98,8 @@ export function HistoryView() {
                         <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                 </Select>
+
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
             </div>
 
             <Card>
@@ -102,10 +108,10 @@ export function HistoryView() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
-                        {paginatedTransactions.length === 0 ? (
+                        {transactions.length === 0 ? (
                             <p className="text-muted-foreground text-sm">No transactions found.</p>
                         ) : (
-                            paginatedTransactions.reduce((acc, transaction, i, arr) => {
+                            transactions.reduce((acc, transaction, i, arr) => {
                                 const date = transaction.date
                                 const prevDate = i > 0 ? arr[i - 1].date : null
 
@@ -118,19 +124,26 @@ export function HistoryView() {
                                 }
 
                                 acc.push(
-                                    <div key={transaction.id} className="flex items-start justify-between border-b pb-4 last:border-0">
+                                    <div
+                                        key={transaction.id}
+                                        className="flex items-start justify-between border-b pb-4 last:border-0"
+                                    >
                                         <div>
                                             <p className="font-medium">{transaction.name}</p>
                                             <Badge
                                                 variant="secondary"
-                                                className={CATEGORY_COLORS[transaction.category as keyof typeof CATEGORY_COLORS] ?? "bg-gray-100 text-gray-800"}
+                                                className={
+                                                    CATEGORY_COLORS[transaction.category as keyof typeof CATEGORY_COLORS] ??
+                                                    "bg-gray-100 text-gray-800"
+                                                }
                                             >
                                                 {transaction.category}
                                             </Badge>
                                             <p className="text-xs text-muted-foreground mt-1">{transaction.description}</p>
                                         </div>
                                         <p className="font-medium">
-                                            {transaction.convertedCurrency} {transaction.convertedAmount.toLocaleString()}
+                                            {transaction.convertedCurrency}{" "}
+                                            {transaction.convertedAmount.toLocaleString()}
                                         </p>
                                     </div>
                                 )
@@ -140,8 +153,7 @@ export function HistoryView() {
                         )}
                     </div>
 
-                    {/* Pagination Controls */}
-                    {filteredTransactions.length > itemsPerPage && (
+                    {totalPages > 1 && (
                         <div className="flex justify-end pt-6 space-x-2">
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -151,12 +163,8 @@ export function HistoryView() {
                                 Previous
                             </button>
                             <button
-                                onClick={() =>
-                                    setCurrentPage((prev) =>
-                                        prev < Math.ceil(filteredTransactions.length / itemsPerPage) ? prev + 1 : prev
-                                    )
-                                }
-                                disabled={currentPage >= Math.ceil(filteredTransactions.length / itemsPerPage)}
+                                onClick={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
+                                disabled={currentPage >= totalPages}
                                 className="px-3 py-1 text-sm border rounded disabled:opacity-50"
                             >
                                 Next
