@@ -13,10 +13,13 @@ import {
     getCategorySpendingComparison,
     getTopExpenses,
     UpdateUserInput,
-    getCachedExchangeRates
+    getCachedExchangeRates,
+    getLatestTransactions
  } from "./repository"
-import { textToExpense } from "./ai_actions"
+import { textToExpense, getInsights } from "./ai_actions"
 import { auth } from "@/auth"
+import { getBestLocale } from "./utils"
+import { DEFAULT_SYSTEM, INSIGHTS_SYSTEM } from "./constants"
 
 export async function getConversionRateFromUSDAction(toCurrency: string) {
     return await getConversionRateFromUSD(toCurrency)
@@ -48,8 +51,16 @@ export async function requireAuth() {
 }
 
 export async function createTransactionFromTextAction(text: string) {
-    const expense = await textToExpense({ input: text })
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    const expense = await textToExpense({ system: user?.aiExpensePrompt || DEFAULT_SYSTEM, input: text })
     return await createTransactionAction(expense)
+}
+
+export async function getInsightsAction(input: string) {
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    return await getInsights({ system: user?.aiInsightPrompt || INSIGHTS_SYSTEM, input })
 }
 
 export async function createTransactionAction(data: {
@@ -84,6 +95,12 @@ export async function getTransactionsAction(filter?: {
     const userId = await requireAuth()
     const user = await getUser(userId)
     return await getTransactions(userId, user?.currency, filter)
+}
+
+export async function getLatestTransactionsAction(limit: number = 3) {
+    const userId = await requireAuth()
+    const user = await getUser(userId)
+    return await getLatestTransactions(userId, user?.currency, limit)
 }
 
 export async function deleteTransactionAction(id: string) {
@@ -135,6 +152,16 @@ export async function getTopExpensesAction(filter?: {
 
 
 export async function getAvailableCurrenciesAction() {
-    return Object.keys(await getCachedExchangeRates())
-}
+    const rates = await getCachedExchangeRates()
+    const currencyCodes = Object.keys(rates)
+  
+    const displayNames = new Intl.DisplayNames(getBestLocale(), {
+      type: 'currency',
+    })
+  
+    return currencyCodes.map(code => ({
+      code,
+      name: displayNames.of(code),
+    }))
+  }
     

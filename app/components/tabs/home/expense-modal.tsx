@@ -40,7 +40,7 @@ type Props = {
 export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Props) {
     const [isEdit, setIsEdit] = useState(false)
     const [formData, setFormData] = useState<Expense | null>(expense)
-    const [currencies, setCurrencies] = useState<string[]>([])
+    const [currencies, setCurrencies] = useState<{code: string, name: string | undefined}[]>([])
 
     useEffect(() => {
         setFormData(expense)
@@ -190,8 +190,8 @@ export default function ExpenseModal({ expense, onClose, onSave, onDelete }: Pro
                           </SelectTrigger>
                           <SelectContent>
                             {currencies.map((currency) => (
-                              <SelectItem key={currency} value={currency}>
-                                {currency}
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.name} - {currency.code}
                               </SelectItem>
                             ))}
                           </SelectContent>
