@@ -27,43 +27,42 @@ type Transaction = {
 
 export function HistoryView() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [totalCount, setTotalCount] = useState(0)
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const itemsPerPage = 3
 
-    useEffect(() => {
-        const fetchData = async () => {
-            const data = await getTransactionsAction()
-            const formatted = data.map((tx) => ({
-                ...tx,
-                date: new Date(tx.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                }),
-            }))
-            setTransactions(formatted)
-        }
+    const fetchTransactions = async () => {
+        const { data, total } = await getTransactionsAction({
+            search: searchQuery,
+            category: categoryFilter === "all" ? undefined : categoryFilter,
+            page: currentPage,
+            limit: itemsPerPage,
+        })
 
-        fetchData()
-    }, [])
+        const formatted = data.map((tx: any) => ({
+            ...tx,
+            date: new Date(tx.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            }),
+        }))
+
+        setTransactions(formatted)
+        setTotalCount(total)
+    }
 
     useEffect(() => {
         setCurrentPage(1)
     }, [searchQuery, categoryFilter])
 
-    const filteredTransactions = transactions.filter((tx) => {
-        const matchCategory = categoryFilter === "all" || tx.category.toLowerCase() === categoryFilter
-        const matchSearch =
-            tx.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            tx.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchCategory && matchSearch
-    })
+    useEffect(() => {
+        fetchTransactions()
+    }, [searchQuery, categoryFilter, currentPage])
 
-    const indexOfLastItem = currentPage * itemsPerPage
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage
-    const paginatedTransactions = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem)
+    const totalPages = Math.ceil(totalCount / itemsPerPage)
 
     return (
         <div className="space-y-4">
@@ -102,10 +101,10 @@ export function HistoryView() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-6">
-                        {paginatedTransactions.length === 0 ? (
+                        {transactions.length === 0 ? (
                             <p className="text-muted-foreground text-sm">No transactions found.</p>
                         ) : (
-                            paginatedTransactions.reduce((acc, transaction, i, arr) => {
+                            transactions.reduce((acc, transaction, i, arr) => {
                                 const date = transaction.date
                                 const prevDate = i > 0 ? arr[i - 1].date : null
 
@@ -123,7 +122,10 @@ export function HistoryView() {
                                             <p className="font-medium">{transaction.name}</p>
                                             <Badge
                                                 variant="secondary"
-                                                className={CATEGORY_COLORS[transaction.category as keyof typeof CATEGORY_COLORS] ?? "bg-gray-100 text-gray-800"}
+                                                className={
+                                                    CATEGORY_COLORS[transaction.category as keyof typeof CATEGORY_COLORS] ??
+                                                    "bg-gray-100 text-gray-800"
+                                                }
                                             >
                                                 {transaction.category}
                                             </Badge>
@@ -141,7 +143,7 @@ export function HistoryView() {
                     </div>
 
                     {/* Pagination Controls */}
-                    {filteredTransactions.length > itemsPerPage && (
+                    {totalPages > 1 && (
                         <div className="flex justify-end pt-6 space-x-2">
                             <button
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -151,12 +153,8 @@ export function HistoryView() {
                                 Previous
                             </button>
                             <button
-                                onClick={() =>
-                                    setCurrentPage((prev) =>
-                                        prev < Math.ceil(filteredTransactions.length / itemsPerPage) ? prev + 1 : prev
-                                    )
-                                }
-                                disabled={currentPage >= Math.ceil(filteredTransactions.length / itemsPerPage)}
+                                onClick={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
+                                disabled={currentPage >= totalPages}
                                 className="px-3 py-1 text-sm border rounded disabled:opacity-50"
                             >
                                 Next

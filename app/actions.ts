@@ -14,7 +14,7 @@ import {
     getTopExpenses,
     UpdateUserInput,
     getCachedExchangeRates
- } from "./repository"
+} from "./repository"
 import { textToExpense } from "./ai_actions"
 import { auth } from "@/auth"
 
@@ -75,15 +75,31 @@ export async function createTransactionAction(data: {
 }
 
 export async function getTransactionsAction(filter?: {
-    category?: string;
-    currency?: string;
-    search?: string;
-    startDate?: Date;
-    endDate?: Date;
+    category?: string
+    currency?: string
+    search?: string
+    startDate?: Date
+    endDate?: Date
+    page?: number
+    limit?: number
 }) {
     const userId = await requireAuth()
     const user = await getUser(userId)
-    return await getTransactions(userId, user?.currency, filter)
+
+    const page = filter?.page ?? 1
+    const limit = filter?.limit ?? 10
+    const skip = (page - 1) * limit
+
+    const { data, total } = await getTransactions(userId, user?.currency, {
+        ...filter,
+        skip,
+        take: limit,
+    })
+
+    return {
+        data,
+        total,
+    }
 }
 
 export async function deleteTransactionAction(id: string) {
@@ -137,4 +153,4 @@ export async function getTopExpensesAction(filter?: {
 export async function getAvailableCurrenciesAction() {
     return Object.keys(await getCachedExchangeRates())
 }
-    
+
